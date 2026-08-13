@@ -1,0 +1,10 @@
+eee.db
+*.pyc
+__pycache__/
+.venv/
+server.log
+cloudflared.log
+pinggy.log
+current_*.txt
+.tunnel_enabled
+*.sock

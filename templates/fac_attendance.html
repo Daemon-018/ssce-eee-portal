@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Faculty - Attendance Management{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>Attendance Management</h1>
+    <p class="muted">View, add and edit student attendance · B.Tech EEE 3-1</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('fac_attendance_update') }}" class="card form-inline">
+      <select name="subject" required>
+        <option value="">-- Subject --</option>
+        {% for s in subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+      </select>
+      <select name="username" required>
+        <option value="">-- Student --</option>
+        {% for st in students %}<option value="{{ st['username'] }}">{{ st['username'] }} · {{ st['name'] }}</option>{% endfor %}
+      </select>
+      <input type="number" name="attended" placeholder="Attended" min="0" required class="input num">
+      <input type="number" name="total" placeholder="Total" min="1" required class="input num">
+      <button class="btn btn-solid" type="submit">Add / Update</button>
+    </form>
+
+    <div class="table-scroll">
+      <table class="grid-table fac-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            {% for s in subjects %}<th>{{ s }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td class="day-col">{{ st['username'] }}<br><small>{{ st['name'] }}</small></td>
+            {% for s in subjects %}
+              {% set rec = data.get(s, {}).get(st['username']) %}
+              <td>
+                {% if rec %}
+                  <strong>{{ rec[0] }}/{{ rec[1] }}</strong>
+                  <br><small class="{{ 'ok' if rec[0]/rec[1] >= 0.75 else 'bad' }}">{{ (rec[0]/rec[1]*100)|round(1) }}%</small>
+                {% else %}
+                  <span class="empty">—</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

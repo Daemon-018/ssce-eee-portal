@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Extra Classes{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Extra / Remedial Class Scheduling</h1>
+      <p class="muted">Schedule remedial classes — especially for backlog students.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card form-card">
+        <h3>Schedule New Class</h3>
+        <form method="post">
+          <label>Subject
+            <select name="subject">
+              {% for s in ["Power System Analysis - II", "Power Electronics - II", "Electrical Machine Design", "Control Systems", "Microprocessors & Microcontrollers", "Digital Signal Processing"] %}
+              <option>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Topic
+            <input type="text" name="topic" required placeholder="Fault Analysis - Problem Solving">
+          </label>
+          <div class="form-row">
+            <label>Date <input type="date" name="date" required></label>
+            <label>Time <input type="text" name="time" placeholder="5:00 - 6:30 PM"></label>
+          </div>
+          <div class="form-row">
+            <label>Room <input type="text" name="room" placeholder="Room 204"></label>
+            <label>Targeted To
+              <select name="targeted_to">
+                <option value="All">All Students</option>
+                <option value="backlog">Backlog Students</option>
+                {% for st in students %}<option value="{{ st.username }}">{{ st.name }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>Notes <textarea name="notes" rows="2" placeholder="Focus on numerical practice..."></textarea></label>
+          <button class="btn btn-solid" type="submit">Schedule Class</button>
+        </form>
+      </div>
+
+      <div>
+        <div class="card mat-card">
+          <h3>Upcoming / Scheduled</h3>
+          {% if not rows %}
+          <p class="muted">No classes scheduled yet.</p>
+          {% else %}
+          {% for r in rows %}
+          <div class="mat-row">
+            <div>
+              <strong>{{ r.subject }}</strong> — {{ r.topic }}<br>
+              <span class="muted small">{{ r.date }}{% if r.time %} · {{ r.time }}{% endif %}{% if r.room %} · {{ r.room }}{% endif %}
+              · {{ 'Backlog' if r.targeted_to == 'backlog' else r.targeted_to }}</span>
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

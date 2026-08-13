@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="dash-hello">
+      <div>
+        <h1>Welcome, {{ session.get('name') }}</h1>
+        <p class="muted">{{ 'Student Portal' if role=='student' else 'Faculty Portal' }} · {{ session.get('username') }}</p>
+      </div>
+      <a class="btn btn-outline" href="{{ url_for('change_password') }}">Change Password</a>
+      <a class="btn btn-outline" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+
+    <div class="dash-grid">
+      {% if role == 'student' %}
+      <a class="card dash-card" href="{{ url_for('profile') }}">
+        <h3>My Profile</h3><p>View roll number, section, batch and CGPA.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('timetable') }}">
+        <h3>Time Table</h3><p>Class schedule + academic calendar for the semester.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('attendance') }}">
+        <h3>Attendance</h3><p>Track your attendance percentage subject-wise.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('syllabus') }}">
+        <h3>Syllabus</h3><p>JNTU-GV R23 syllabus and course outcomes.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('study_materials') }}">
+        <h3>Study Materials</h3><p>Easy notes, PDFs, PPTs and video lectures.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('pyq') }}">
+        <h3>Previous Papers</h3><p>Previous year question papers (regular &amp; supply).</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('solved_papers') }}">
+        <h3>Solved Answers</h3><p>Solved previous year papers with step-by-step answers.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('academic_calendar') }}">
+        <h3>Academic Calendar</h3><p>Important dates: exams, results, holidays.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('backlog_tracker') }}">
+        <h3>Backlog Tracker</h3><p>Track your pending and cleared backlogs.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('exam_notifications') }}">
+        <h3>Exam Alerts</h3><p>Regular and supply exam notifications.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('mentorship') }}">
+        <h3>Mentorship</h3><p>Your mentor, meeting schedule and notes.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('extra_classes') }}">
+        <h3>Extra Classes</h3><p>Remedial and extra class schedule.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('careers') }}">
+        <h3>Careers &amp; Jobs</h3><p>Core / non-core jobs + reasoning, aptitude, arithmetic.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('resume_builder') }}">
+        <h3>Resume Builder</h3><p>Build your EEE resume, then save as PDF.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('notices') }}">
+        <h3>Notices</h3><p>Department circulars and announcements.</p>
+      </a>
+      {% else %}
+      <a class="card dash-card" href="{{ url_for('fac_attendance') }}">
+        <h3>Attendance Entry</h3><p>Daily attendance tracking, add / edit per subject.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('fac_marks') }}">
+        <h3>Marks Entry</h3><p>Enter and manage MID-1 / MID-2 marks.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('fac_performance') }}">
+        <h3>Performance Analysis</h3><p>Pass / fail, strengths &amp; weaknesses per student.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('fac_syllabus_tracker') }}">
+        <h3>Syllabus Tracker</h3><p>Unit-wise coverage status of every subject.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('fac_extra_classes') }}">
+        <h3>Extra Classes</h3><p>Schedule remedial classes for backlog students.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('backlog_tracker') }}">
+        <h3>Backlog Overview</h3><p>All students' pending and cleared backlogs.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('mentorship') }}">
+        <h3>Mentorship</h3><p>Mentor-wise student meetings and notes.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('fac_timetable') }}">
+        <h3>Time Table Editor</h3><p>Edit the department class schedule.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('notices') }}">
+        <h3>Notices</h3><p>Department announcements and circulars.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('profile') }}">
+        <h3>Faculty Profile</h3><p>Your academic profile details.</p>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

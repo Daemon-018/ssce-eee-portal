@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Syllabus{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <h1>Syllabus</h1>
+    <p class="muted">B.Tech EEE · JNTU-GV R23 Regulation (JNTUGV CEV Autonomous)</p>
+    {% if entry == 'lateral' %}
+    <p class="muted">Lateral Entry Student · Semesters 2-1 to 4-2 (6 semesters)</p>
+    {% else %}
+    <p class="muted">Regular Student · Semesters 1-1 to 4-2 (8 semesters)</p>
+    {% endif %}
+    <div class="sem-switch">
+      {% for s in sems %}
+      <a href="{{ url_for('syllabus', sem=s) }}"
+         class="sem-chip {{ 'active' if s == sem else '' }}">{{ s }}</a>
+      {% endfor %}
+    </div>
+    <p class="muted sem-label">Showing: {{ sem }} semester</p>
+
+    {% for s in subjects %}
+    <div class="card syl-card">
+      <div class="syl-head">
+        <div>
+          <h3>{{ s['subject'] }}</h3>
+          <p class="muted">Code: {{ s['code'] }} · Credits: {{ s['credits'] }}</p>
+        </div>
+        <span class="role-badge professor">R23</span>
+      </div>
+      <div class="syl-units">
+        {% for u in s['units'] %}
+        <div class="unit">
+          <span class="unit-tag">Unit {{ u[0] }}</span>
+          <ul>
+            {% for t in u[1] %}<li>{{ t }}</li>{% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">No syllabus found for this semester yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+.sem-switch { margin: 16px 0 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+.sem-chip {
+  display: inline-block; padding: 6px 16px; border-radius: 20px;
+  background: var(--card, #f5f5f5); border: 1px solid #ddd;
+  color: inherit; text-decoration: none; font-weight: 600; font-size: .9rem;
+}
+.sem-chip.active {
+  background: var(--accent, #0d47a1); color: #fff; border-color: var(--accent, #0d47a1);
+}
+.sem-label { margin: 8px 0 20px; font-size: .85rem; }
+</style>
+{% endblock %}

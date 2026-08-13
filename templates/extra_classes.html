@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Extra Classes{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Extra / Remedial Classes</h1>
+      <p class="muted">Scheduled extra classes — especially for backlog students.</p>
+    </div>
+
+    {% if not rows %}
+      <div class="card empty-card"><p>No extra classes scheduled.</p></div>
+    {% endif %}
+
+    <div class="cal-list">
+      {% for r in rows %}
+      <div class="card cal-row">
+        <div class="cal-date">
+          <span class="cal-day">{{ r.date[8:10] }}</span>
+          <span class="cal-month">{{ r.date[5:7] }}-{{ r.date[0:4] }}</span>
+        </div>
+        <div class="cal-info">
+          <span class="cal-cat">{{ r.subject }}</span>
+          <h3>{{ r.topic }}</h3>
+          <p class="muted">{{ r.time or 'Time TBD' }}{% if r.room %} · {{ r.room }}{% endif %}
+             · <strong>{{ 'For Backlog Students' if r.targeted_to == 'backlog' else 'Open to All' }}</strong></p>
+          {% if r.notes %}<p class="muted small">{{ r.notes }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

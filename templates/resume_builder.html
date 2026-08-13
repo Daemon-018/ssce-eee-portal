@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Resume Builder{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container narrow">
+    <div class="page-head">
+      <h1>Resume Builder</h1>
+      <p class="muted">Fill in your details, save, then open Print View and Save as PDF.</p>
+    </div>
+
+    <form method="post" class="card form-card">
+      <label>Full Name
+        <input type="text" name="fullname" value="{{ data.fullname }}" placeholder="K. Venkata Surya">
+      </label>
+      <label>Email
+        <input type="email" name="email" value="{{ data.email }}" placeholder="you@email.com">
+      </label>
+      <label>Phone
+        <input type="text" name="phone" value="{{ data.phone }}" placeholder="+91 9XXXXXXXXX">
+      </label>
+      <label>Career Objective
+        <textarea name="objective" rows="3" placeholder="Seeking a challenging role in power systems engineering...">{{ data.objective }}</textarea>
+      </label>
+
+      <h3 class="form-sub">Education <span class="muted small">(one per line)</span></h3>
+      <textarea name="education" rows="4" placeholder="B.Tech EEE, JNTU-GV, CGPA 8.2">{{ data.education|join('\n') }}</textarea>
+
+      <h3 class="form-sub">Technical Skills <span class="muted small">(one per line)</span></h3>
+      <textarea name="skills" rows="4" placeholder="MATLAB, Python, AutoCAD, Power System Analysis">{{ data.skills|join('\n') }}</textarea>
+
+      <h3 class="form-sub">Projects <span class="muted small">(one per line)</span></h3>
+      <textarea name="projects" rows="4" placeholder="Design of Solar Microgrid for Rural Village - 2025">{{ data.projects|join('\n') }}</textarea>
+
+      <h3 class="form-sub">Certifications <span class="muted small">(one per line)</span></h3>
+      <textarea name="certifications" rows="3" placeholder="MATLAB Onramp - MathWorks (2025)">{{ data.certifications|join('\n') }}</textarea>
+
+      <h3 class="form-sub">Achievements <span class="muted small">(one per line)</span></h3>
+      <textarea name="achievements" rows="3" placeholder="Secured 1st place in college technical fest - 2025">{{ data.achievements|join('\n') }}</textarea>
+
+      <div class="form-actions">
+        <button class="btn btn-solid" type="submit">Save Resume</button>
+        <a class="btn btn-outline" href="{{ url_for('resume_print') }}" target="_blank">Print View</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Study Materials{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Study Materials</h1>
+      <p class="muted">Easy notes, PDFs, PPTs and video lectures — subject-wise for 3-1 semester.</p>
+    </div>
+
+    {% if not by_subject %}
+      <div class="card empty-card"><p>No study materials uploaded yet.</p></div>
+    {% endif %}
+
+    {% for subject, items in by_subject.items() %}
+    <div class="card mat-card">
+      <h3>{{ subject }}</h3>
+      <div class="mat-list">
+        {% for it in items %}
+        <div class="mat-row">
+          <span class="kind-badge kind-{{ it.kind }}">{{ it.kind|upper }}</span>
+          <span class="mat-title">{{ it.title }}</span>
+          {% if it.link and it.link != '#' %}
+          <a class="btn btn-sm btn-outline" href="{{ it.link }}" target="_blank" rel="noopener">Open</a>
+          {% elif it.link == '#' %}
+          <span class="btn btn-sm btn-ghost disabled">Soon</span>
+          {% else %}
+          <span class="muted small">In-class handout</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="muted small">Uploaded by {{ items[0].uploaded_by }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

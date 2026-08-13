@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Careers & Jobs{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Careers &amp; Job Opportunities</h1>
+      <p class="muted">Core and non-core paths — plus practice resources for every exam.</p>
+    </div>
+
+    {% for cat, name, desc in meta %}
+      {% if groups.get(cat) %}
+      <div class="card mat-card">
+        <h3>{{ name }}</h3>
+        <p class="muted">{{ desc }}</p>
+        <div class="job-list">
+          {% for j in groups[cat] %}
+          <div class="job-row">
+            <div>
+              <strong>{{ j.title }}</strong>
+              <p class="muted small">{{ j.description }}</p>
+            </div>
+            {% if j.link %}
+              {% if j.link.startswith('/') %}
+              <a class="btn btn-sm btn-outline" href="{{ j.link }}">Open</a>
+              {% else %}
+              <a class="btn btn-sm btn-outline" href="{{ j.link }}" target="_blank" rel="noopener">Visit</a>
+              {% endif %}
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

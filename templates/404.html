@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+{% block content %}
+<section class="auth-section">
+  <div class="auth-card center">
+    <h1>404</h1>
+    <p>Page not found. Head back home.</p>
+    <a class="btn btn-solid" href="{{ url_for('home') }}">Go Home</a>
+  </div>
+</section>
+{% endblock %}

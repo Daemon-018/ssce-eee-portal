@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Student Performance Analysis{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Student Performance Analysis</h1>
+      <p class="muted">Pass / fail status, strengths &amp; weaknesses per subject — derived from marks + attendance.</p>
+    </div>
+
+    <form method="get" class="card picker-card">
+      <label>Select Student
+        <select name="student" onchange="this.form.submit()">
+          {% for s in students %}
+          <option value="{{ s.username }}" {{ 'selected' if s.username == sel }}>{{ s.name }} ({{ s.username }})</option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+
+    {% if analysis %}
+    <div class="stat-strip">
+      <div class="card stat-box"><strong>{{ analysis.overall }}%</strong><span>Avg Best Marks</span></div>
+      <div class="card stat-box"><strong>{{ analysis.att_overall }}%</strong><span>Avg Attendance</span></div>
+      <div class="card stat-box"><strong>{{ analysis.strengths|length }}</strong><span>Strengths</span></div>
+      <div class="card stat-box"><strong>{{ analysis.risk|length }}</strong><span>At Risk</span></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card mat-card">
+        <h3>Strengths</h3>
+        {% if analysis.strengths %}
+        <ul class="tick-list">
+          {% for s, _k, label in analysis.strengths %}<li><strong>{{ s }}</strong> — {{ label }}</li>{% endfor %}
+        </ul>
+        {% else %}<p class="muted">No strong subjects yet.</p>{% endif %}
+      </div>
+
+      <div class="card mat-card">
+        <h3>Areas to Improve</h3>
+        {% if analysis.weaknesses %}
+        <ul class="warn-list">
+          {% for s, _k, label in analysis.weaknesses %}<li><strong>{{ s }}</strong> — {{ label }}</li>{% endfor %}
+        </ul>
+        {% else %}<p class="muted">No weak subjects.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mat-card">
+      <h3>Metrics (best MID marks / attendance)</h3>
+      <div class="table-wrap">
+        <table class="tbl">
+          <tr><th>Subject</th><th>Best Marks (/30)</th><th>%</th><th>Attendance %</th><th>Flag</th></tr>
+          {% for s, d in analysis.per_subject.items() %}
+          <tr>
+            <td>{{ s }}</td>
+            <td>{{ d.best }}</td>
+            <td>{{ d.pct }}%</td>
+            <td>{{ d.att }}%</td>
+            <td>
+              {% if d.pct < 50 %}<span class="badge badge-danger">Weak</span>
+              {% elif d.pct < 75 %}<span class="badge badge-warn">Average</span>
+              {% else %}<span class="badge badge-ok">Strong</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      <p class="muted small">Risk = best marks below 50% OR attendance below 75%.</p>
+    </div>
+
+    {% if analysis.risk %}
+    <div class="card mat-card risk-card">
+      <h3>⚠ Suggested Action</h3>
+      <p>This student needs attention in: <strong>{{ analysis.risk|map(attribute=0)|join(', ') }}</strong>.
+         Recommend extra classes and mentor follow-up.</p>
+      <a class="btn btn-sm btn-solid" href="{{ url_for('fac_extra_classes') }}">Schedule Extra Class</a>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="card empty-card"><p>No students found.</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

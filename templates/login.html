@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Student Login' if role=='student' else 'Faculty Login' }}{% endblock %}
+{% block content %}
+<section class="auth-section">
+  <div class="auth-card">
+    <div class="auth-head">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SSCE" class="auth-logo">
+      <h1>{{ 'Student Portal' if role=='student' else 'Faculty Portal' }}</h1>
+      <p>{{ 'Sign in with your roll number' if role=='student' else 'Sign in with your faculty ID' }}</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('do_login') }}" autocomplete="off">
+      <input type="hidden" name="role" value="{{ role }}">
+      <label>Username</label>
+      <input class="input" type="text" name="username" placeholder="{{ 'Roll number (e.g. 21A31A0201)' if role=='student' else 'Faculty ID' }}" required autofocus>
+      <label>Password</label>
+      <input class="input" type="password" name="password" placeholder="Password" required>
+      <button class="btn btn-solid btn-block" type="submit">Login</button>
+    </form>
+
+    {% if role == 'student' %}
+    <p class="auth-note">New here? <a href="#">Contact the department office</a> to get your account.</p>
+    {% else %}
+    <p class="auth-note">Faculty accounts are provisioned by the HoD office.</p>
+    {% endif %}
+
+    <div class="auth-demo">
+      <strong>Demo accounts</strong>
+      <ul>
+        <li>Student — username: <code>21A31A0201</code> · password: <code>student123</code></li>
+        <li>Faculty — username: <code>faculty</code> · password: <code>faculty123</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

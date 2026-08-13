@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Time Table{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <h1>Time Table</h1>
+    <p class="muted">B.Tech EEE · III Year I-Semester (3-1) · w.e.f 10 Aug 2026</p>
+
+    <div class="table-scroll">
+      <table class="grid-table">
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>I<br><small>9:00-9:50</small></th>
+            <th>II<br><small>9:50-10:40</small></th>
+            <th>III<br><small>11:00-11:50</small></th>
+            <th>IV<br><small>11:50-12:40</small></th>
+            <th>V<br><small>1:30-2:20</small></th>
+            <th>VI<br><small>2:20-3:10</small></th>
+            <th>VII<br><small>3:20-4:10</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d, name in days.items() %}
+          <tr>
+            <td class="day-col">{{ name }}</td>
+            {% for p in range(1, 8) %}
+              {% set slot = grid[d][p] %}
+              {% set is_lab = slot and slot['subject'] and ('Lab' in slot['subject'] or 'Lab' in slot['room'] or slot['subject']=='Mentor Session / Sports') %}
+              <td class="{{ 'lunch' if slot and slot['subject']=='Lunch' else ('lab' if is_lab else '') }}">
+                {% if slot and slot['subject'] and slot['subject'] != 'Lunch' %}
+                  <strong>{{ slot['subject'] }}</strong>
+                  {% if is_lab %}<span class="lab-tag">LAB</span>{% endif %}
+                  {% if slot['faculty'] %}<br><small>{{ slot['faculty'] }}</small>{% endif %}
+                  {% if slot['room'] %}<br><small class="room">{{ slot['room'] }}</small>{% endif %}
+                {% elif slot and slot['subject'] == 'Lunch' %}
+                  <em>Lunch</em>
+                {% else %}
+                  <span class="empty">&mdash;</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tt-legend">
+      <span class="legend-item"><span class="legend-swatch theory-swatch"></span> Theory</span>
+      <span class="legend-item"><span class="legend-swatch lab-swatch"></span> Lab / Practical</span>
+    </div>
+
+    <div class="tt-split">
+      <div class="card tt-group">
+        <h3>📚 Theory Subjects</h3>
+        <ul>
+          {% for s in subjects['theory'] %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card tt-group">
+        <h3>🔬 Laboratory / Practical</h3>
+        <ul>
+          {% for s in subjects['labs'] %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

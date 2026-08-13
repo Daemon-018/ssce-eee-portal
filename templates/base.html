@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}EEE Dept{% endblock %} | Sri Sivani College of Engineering</title>
+<link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a class="brand" href="{{ url_for('home') }}">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SSCE logo" class="brand-logo">
+      <span class="brand-text">
+        <strong>EEE Department</strong>
+        <small>Sri Sivani College of Engineering</small>
+      </span>
+    </a>
+    <nav class="nav">
+      <a href="{{ url_for('home') }}">Home</a>
+      {% if session.get('user_id') %}
+        {% if session.get('role') == 'student' %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('study_materials') }}">Study</a>
+        <a href="{{ url_for('careers') }}">Careers</a>
+        <a href="{{ url_for('resume_builder') }}">Resume</a>
+        {% else %}
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('fac_performance') }}">Performance</a>
+        <a href="{{ url_for('fac_syllabus_tracker') }}">Syllabus</a>
+        {% endif %}
+        <a class="btn btn-sm btn-outline" href="{{ url_for('change_password') }}">Change Password</a>
+        <a class="btn btn-sm btn-outline" href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+        <a class="btn btn-sm btn-outline" href="{{ url_for('login', role='student') }}">Student Login</a>
+        <a class="btn btn-sm btn-solid" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-wrap container">
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <h4>EEE Department</h4>
+      <p>Sri Sivani College of Engineering<br>Chilakapalem, Srikakulam, Andhra Pradesh</p>
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="{{ url_for('home') }}#about">About Dept</a></li>
+        <li><a href="{{ url_for('home') }}#faculty">Faculty</a></li>
+        <li><a href="{{ url_for('home') }}#courses">Courses</a></li>
+        <li><a href="{{ url_for('login', role='student') }}">Student Login</a></li>
+        <li><a href="{{ url_for('login', role='faculty') }}">Faculty Login</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Portals</h4>
+      <ul>
+        <li><a href="{{ url_for('login', role='student') }}">Student Portal</a></li>
+        <li><a href="{{ url_for('login', role='faculty') }}">Faculty Portal</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <p>JNTU-GV Affiliated<br>NBA Accredited (2013)</p>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    &copy; 2026 Sri Sivani College of Engineering, Srikakulam. All Rights Reserved.
+  </div>
+</footer>
+</body>
+</html>

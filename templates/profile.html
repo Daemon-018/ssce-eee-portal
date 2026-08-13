@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container narrow">
+    <h1>My Profile</h1>
+    <div class="card profile-card">
+      <div class="profile-head">
+        <div class="avatar">{{ me['name'][0] }}</div>
+        <div>
+          <h3>{{ me['name'] }}</h3>
+          <p class="muted">{{ 'Faculty' if me['role']=='faculty' else 'Student' }}
+             {% if me['designation'] %} · {{ me['designation'] }}{% endif %}</p>
+        </div>
+      </div>
+
+      <table class="profile-table">
+        <tr><td>Username</td><td>{{ me['username'] }}</td></tr>
+        {% if me['role'] == 'student' %}
+        <tr><td>Section</td><td>{{ me['section'] }}</td></tr>
+        <tr><td>Year / Semester</td><td>{{ me['year'] }}</td></tr>
+        <tr><td>Batch</td><td>{{ me['batch'] }}</td></tr>
+        <tr><td>CGPA (till last sem)</td><td>{{ me['cgpa'] }}</td></tr>
+        {% else %}
+        <tr><td>Qualification</td><td>{{ me['extra'] }}</td></tr>
+        {% endif %}
+        <tr><td>Email</td><td>{{ me['email'] }}</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

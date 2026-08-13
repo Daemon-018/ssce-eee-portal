@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Notices{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <h1>Department Notices</h1>
+    <p class="muted">Circulars &amp; announcements from the EEE office</p>
+
+    <div class="notice-list">
+      {% for n in rows %}
+      <div class="card notice-card">
+        <div class="notice-tags">
+          <span class="role-badge professor">{{ n['category'] }}</span>
+          <span class="notice-date">{{ n['posted_on'] }}</span>
+        </div>
+        <h3>{{ n['title'] }}</h3>
+        <p>{{ n['body'] }}</p>
+        <small class="muted">Posted by {{ n['author'] }}</small>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

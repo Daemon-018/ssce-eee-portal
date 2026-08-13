@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Syllabus Tracker{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Syllabus Coverage Tracker</h1>
+      <p class="muted">Unit-wise completion status of every subject this semester.</p>
+    </div>
+
+    <div class="card form-card">
+      <h3>Update Unit Status</h3>
+      <form method="post" class="inline-form">
+        <select name="subject">
+          {% for s in subjects %}<option>{{ s }}</option>{% endfor %}
+        </select>
+        <input type="text" name="unit" placeholder="Unit (I, II, ...)" style="width:90px" required>
+        <select name="status">
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
+        <input type="date" name="covered_on" title="Completion date (auto for Completed)">
+        <button class="btn btn-solid" type="submit">Update</button>
+      </form>
+    </div>
+
+    {% for subject in subjects %}
+    <div class="card mat-card">
+      <h3>{{ subject }}</h3>
+      {% set srows = rows | selectattr('subject', 'equalto', subject) | list %}
+      <div class="tracker-strip">
+        {% for r in srows %}
+        <div class="tracker-unit tracker-{{ r.status|lower|replace(' ', '-') }}">
+          <strong>Unit {{ r.unit }}</strong>
+          <span>{{ r.status }}</span>
+          {% if r.covered_on %}<small>{{ r.covered_on }}</small>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

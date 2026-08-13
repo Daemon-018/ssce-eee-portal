@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Faculty - Time Table Editor{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>Time Table Editor</h1>
+    <p class="muted">Edit class schedule · B.Tech EEE 3-1</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="tt-edit-form">
+      {% for d, name in days.items() %}
+        {% for p in range(1, 8) %}
+          {% set slot = grid[d][p] %}
+          <form method="POST" action="{{ url_for('fac_timetable_update') }}" class="slot-form">
+            <input type="hidden" name="day" value="{{ d }}">
+            <input type="hidden" name="period" value="{{ p }}">
+            <div class="slot-label">{{ name }} · P{{ p }}</div>
+            <input type="text" name="subject" class="input" placeholder="Subject"
+                   value="{{ slot['subject'] if slot and slot['subject'] != 'Lunch' else '' }}">
+            <input type="text" name="faculty" class="input" placeholder="Faculty"
+                   value="{{ slot['faculty'] if slot else '' }}">
+            <input type="text" name="room" class="input" placeholder="Room"
+                   value="{{ slot['room'] if slot else '' }}">
+            <button class="btn btn-sm btn-solid" type="submit">Save</button>
+          </form>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

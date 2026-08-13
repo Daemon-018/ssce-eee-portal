@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Exam Notifications{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Examination Notifications</h1>
+      <p class="muted">Regular and supply exam alerts from JNTU-GV and the department.</p>
+    </div>
+
+    {% if not rows %}
+      <div class="card empty-card"><p>No exam notifications yet.</p></div>
+    {% endif %}
+
+    {% for r in rows %}
+    <div class="card notif-card">
+      <div class="notif-head">
+        <span class="exam-badge exam-{{ 'supply' if r.exam_type == 'Supply' else 'regular' }}">{{ r.exam_type }} Exam</span>
+        <span class="muted small">{{ r.posted_on }}</span>
+      </div>
+      <h3>{{ r.title }}</h3>
+      <p>{{ r.body }}</p>
+      {% if r.link and r.link != '#' %}<a class="btn btn-sm btn-outline" href="{{ r.link }}" target="_blank" rel="noopener">View Details</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

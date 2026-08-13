@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Mentorship{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Mentorship</h1>
+      <p class="muted">
+        {% if session.get('role') == 'student' %}Your mentor and meeting schedule.{% else %}Mentor-wise student meetings and notes.{% endif %}
+      </p>
+    </div>
+
+    {% if not rows %}
+      <div class="card empty-card"><p>No mentorship data yet.</p></div>
+    {% endif %}
+
+    {% for r in rows %}
+    <div class="card mentor-card">
+      <div class="mentor-avatar">{{ (r.mentor or 'M')[0] }}</div>
+      <div class="mentor-body">
+        <div class="mentor-head">
+          <h3>{{ r.mentor }}</h3>
+          {% if session.get('role') != 'student' %}
+          <span class="badge badge-info">{{ r.name }} ({{ r.username }})</span>
+          {% endif %}
+        </div>
+        <div class="mentor-dates">
+          <span><strong>Last meeting:</strong> {{ r.last_meeting or '—' }}</span>
+          <span><strong>Next meeting:</strong> {{ r.next_meeting or '—' }}</span>
+        </div>
+        {% if r.notes %}<p class="muted">{{ r.notes }}</p>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

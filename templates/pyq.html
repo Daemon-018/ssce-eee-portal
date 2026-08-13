@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Previous Year Question Papers{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Previous Year Question Papers</h1>
+      <p class="muted">Regular and supply exam papers — download and practice.</p>
+    </div>
+
+    {% if not by_subject %}
+      <div class="card empty-card"><p>No question papers uploaded yet.</p></div>
+    {% endif %}
+
+    {% for subject, items in by_subject.items() %}
+    <div class="card mat-card">
+      <h3>{{ subject }}</h3>
+      <div class="mat-list">
+        {% for p in items %}
+        <div class="mat-row">
+          <span class="exam-badge exam-{{ 'supply' if p.exam == 'Supply' else 'regular' }}">{{ p.exam }}</span>
+          <span class="mat-title">{{ p.year }} — Question Paper</span>
+          <a class="btn btn-sm btn-outline" href="{{ p.download }}" target="_blank" rel="noopener">Download</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

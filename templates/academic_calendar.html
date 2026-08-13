@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Academic Calendar{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Academic Calendar</h1>
+      <p class="muted">All important dates for 2026-27 (3-1 semester).</p>
+    </div>
+
+    {% if not rows %}
+      <div class="card empty-card"><p>No calendar events yet.</p></div>
+    {% endif %}
+
+    <div class="cal-list">
+      {% for r in rows %}
+      <div class="card cal-row">
+        <div class="cal-date">
+          <span class="cal-day">{{ r.event_date[8:10] }}</span>
+          <span class="cal-month">{{ r.event_date[5:7] }}-{{ r.event_date[0:4] }}</span>
+        </div>
+        <div class="cal-info">
+          <span class="cal-cat">{{ r.category }}</span>
+          <h3>{{ r.title }}</h3>
+          {% if r.note %}<p class="muted">{{ r.note }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

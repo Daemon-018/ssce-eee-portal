@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}About EEE Dept{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-badge">NBA Accredited · Est. 2006</div>
+    <h1>Electrical &amp; Electronics<br>Engineering Department</h1>
+    <p>Powering futures since 2006 — moulding tomorrow's technocrats with high
+       calibre and commitment, from the heart of Sri Sivani College of Engineering.</p>
+    <div class="hero-actions">
+      <a class="btn btn-solid" href="#about">About the Department</a>
+      <a class="btn btn-outline-light" href="{{ url_for('login', role='student') }}">Student Login</a>
+      <a class="btn btn-outline-light" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
+    </div>
+    <div class="hero-stats">
+      <div><strong>2006</strong><span>Established</span></div>
+      <div><strong>60</strong><span>B.Tech Intake</span></div>
+      <div><strong>14</strong><span>Batches Graduated</span></div>
+      <div><strong>NBA</strong><span>Accredited</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+  <div class="container two-col">
+    <div>
+      <h2>About EEE Dept.</h2>
+      <p>The Department of Electrical and Electronics Engineering was established in the academic year
+         <strong>2006</strong> with an annual intake of <strong>60</strong>. The Department was accredited
+         by <strong>NBA</strong> (National Board of Accreditation, AICTE, Delhi) for 2 years in the year
+         <strong>2013</strong>. Fourteen batches of students have graduated so far.</p>
+      <p>The Department is offering an <strong>M.Tech course in Power Electronics</strong> since 2013 with
+         an intake of 12. The Department focuses on preparing students for a wide range of careers in the
+         power sector.</p>
+      <p>Equipping students with a unique, enriching experience of moulding tomorrow's technocrats with
+         high calibre and commitment.</p>
+    </div>
+    <div class="card v-mission">
+      <h3>Department Vision</h3>
+      <p>To be a Centre of Eminence in Electrical and Electronics Engineering to produce technically
+         competent professionals.</p>
+      <h3>Department Mission</h3>
+      <ul class="mission-list">
+        <li><strong>M1:</strong> Vibrant learning environment &amp; resources for students' personal and professional growth.</li>
+        <li><strong>M2:</strong> Make rural students professionally skilful, foster research, design, development and entrepreneurship.</li>
+        <li><strong>M3:</strong> Nurture communication skills, leadership, ethics and entrepreneurship for sustained growth.</li>
+        <li><strong>M4:</strong> Mutually beneficial industry &amp; government relationships for sustainable societal solutions.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- COURSES -->
+<section id="courses" class="section section-alt">
+  <div class="container">
+    <h2 class="center">Courses Offered</h2>
+    <div class="course-grid">
+      <div class="card course-card">
+        <div class="course-tag">B.Tech</div>
+        <h3>Electrical &amp; Electronics Engineering</h3>
+        <p>Power systems, Electrical Machines, Power Electronics, Control Systems — generation,
+           transmission and distribution of power along with automation and control of industries.</p>
+        <ul class="tick-list">
+          <li>4-year degree · 8 semesters · 18-week semester system</li>
+          <li>University examinations each semester (JNTU-GV)</li>
+          <li>Intake: 60 (Category A) + 12 (Category B)</li>
+        </ul>
+      </div>
+      <div class="card course-card">
+        <div class="course-tag">M.Tech</div>
+        <h3>Power Electronics</h3>
+        <p>Core EEE disciplines plus electives in the latest developments — training manpower for
+           industry needs, research in specialised areas, and engineering faculty growth.</p>
+        <ul class="tick-list">
+          <li>2-year degree · 4 semesters · second year for project</li>
+          <li>Industry, research and teaching pathways</li>
+          <li>Intake: 9 (Category A) + 3 (Category B)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FACULTY -->
+<section id="faculty" class="section">
+  <div class="container">
+    <h2 class="center">Our Faculty</h2>
+    <p class="center muted">Qualified and committed faculty with extensive experience.</p>
+    <div class="faculty-grid">
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/01_hod.jpg') }}" alt="Dr.G.T. Chandra Sekhar">
+        <h3>Dr.G.T. Chandra Sekhar</h3>
+        <p class="muted">M.Tech, Ph.D.</p>
+        <span class="role-badge professor">Professor &amp; HoD</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/02_rajselvan.jpg') }}" alt="Dr.Rajselvan C">
+        <h3>Dr.Rajselvan C</h3>
+        <p class="muted">M.Tech, Ph.D.</p>
+        <span class="role-badge associate">Associate Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/03_kanthi.jpg') }}" alt="Dr.Kanthi Andhavarapu">
+        <h3>Dr.Kanthi Andhavarapu</h3>
+        <p class="muted">M.Tech, Ph.D.</p>
+        <span class="role-badge associate">Associate Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/04_saisudha.jpg') }}" alt="Ms.Majji Sai Sudha">
+        <h3>Ms.Majji Sai Sudha</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/05_gopi.jpg') }}" alt="Mr.Simma Gopi">
+        <h3>Mr.Simma Gopi</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/06_sairajesh.jpg') }}" alt="Mr.Sai Rajesh Kumar Iddumalla">
+        <h3>Mr.Sai Rajesh Kumar Iddumalla</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/07_padmini.jpg') }}" alt="Ms.Padmini Anakapalli">
+        <h3>Ms.Padmini Anakapalli</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/08_praveen.jpg') }}" alt="Mr.Praveen Kumar Jammu">
+        <h3>Mr.Praveen Kumar Jammu</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+      <div class="card fcard">
+        <img src="{{ url_for('static', filename='images/faculty/09_bhargav.jpg') }}" alt="Mr.P.Bhargav">
+        <h3>Mr.P.Bhargav</h3>
+        <p class="muted">M.Tech</p>
+        <span class="role-badge asst">Assistant Professor</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SALIENT FEATURES -->
+<section id="features" class="section section-alt">
+  <div class="container">
+    <h2 class="center">Salient Features</h2>
+    <div class="feature-grid">
+      <div class="card feature-card"><h3>Experienced Faculty</h3><p>Qualified and committed faculty with extensive experience.</p></div>
+      <div class="card feature-card"><h3>Well-Equipped Labs</h3><p>State-of-art laboratories supporting hands-on learning.</p></div>
+      <div class="card feature-card"><h3>Industry MoUs</h3><p>Spoken Tutorial (IIT Bombay), Indwell Automation Pune, Samkrg Pistons.</p></div>
+      <div class="card feature-card"><h3>Industrial Exposure</h3><p>Industrial visits, workshops and conferences on emerging trends.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta-band">
+  <div class="container center">
+    <h2>Join the EEE Department</h2>
+    <p>Students and faculty — access the department portal.</p>
+    <a class="btn btn-solid" href="{{ url_for('login', role='student') }}">Student Login</a>
+    <a class="btn btn-outline-light" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
+  </div>
+</section>
+
+{% endblock %}

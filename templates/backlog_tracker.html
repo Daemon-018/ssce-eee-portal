@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Backlog Tracker{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="page-head">
+      <h1>Backlog Tracker</h1>
+      <p class="muted">
+        {% if session.get('role') == 'student' %}
+          Your pending and cleared subjects.
+        {% else %}
+          All students' backlog status — helps plan extra classes.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="stat-strip">
+      <div class="card stat-box"><strong>{{ pending|length }}</strong><span>Pending</span></div>
+      <div class="card stat-box"><strong>{{ cleared|length }}</strong><span>Cleared</span></div>
+      <div class="card stat-box"><strong>{{ rows|length }}</strong><span>Total</span></div>
+    </div>
+
+    {% if pending %}
+    <div class="card mat-card">
+      <h3>Pending Backlogs</h3>
+      <div class="table-wrap">
+        <table class="tbl">
+          <tr><th>{% if session.get('role') != 'student' %}Student{% endif %}</th><th>Subject</th><th>Semester</th><th>Attempts</th><th>Status</th><th>Note</th></tr>
+          {% for b in pending %}
+          <tr>
+            {% if session.get('role') != 'student' %}<td>{{ b.name }} <small class="muted">({{ b.username }})</small></td>{% endif %}
+            <td>{{ b.subject }}</td><td>{{ b.sem }}</td><td>{{ b.attempts }}</td>
+            <td><span class="badge badge-danger">Pending</span></td>
+            <td class="muted small">{{ b.note }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if cleared %}
+    <div class="card mat-card">
+      <h3>Cleared Backlogs</h3>
+      <div class="table-wrap">
+        <table class="tbl">
+          <tr><th>{% if session.get('role') != 'student' %}Student{% endif %}</th><th>Subject</th><th>Semester</th><th>Cleared On</th></tr>
+          {% for b in cleared %}
+          <tr>
+            {% if session.get('role') != 'student' %}<td>{{ b.name }} <small class="muted">({{ b.username }})</small></td>{% endif %}
+            <td>{{ b.subject }}</td><td>{{ b.sem }}</td><td>{{ b.cleared_date or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
