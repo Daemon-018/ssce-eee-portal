@@ -234,7 +234,7 @@ def seed_users():
     users = [
         ("faculty", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
          "hod.eee@srisivani.edu.in", "", "", "", None,
-         "Professor & HoD", "M.Tech, Ph.D. - 18 years experience"),
+         "Vice Principal", "M.Tech, Ph.D. - 18 years experience"),
     ]
     for u in users:
         exists = conn.execute("SELECT id FROM users WHERE username=?", (u[0],)).fetchone()

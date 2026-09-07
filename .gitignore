@@ -8,3 +8,4 @@ pinggy.log
 current_*.txt
 .tunnel_enabled
 *.sock
+eee.db.bak*

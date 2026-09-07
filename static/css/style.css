@@ -135,7 +135,7 @@ h1,h2,h3,.brand-text strong{font-family:'Space Grotesk',sans-serif;letter-spacin
 .hero-badge{display:inline-block;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:999px;font-size:.78rem;font-weight:600;letter-spacing:1.1px;margin-bottom:16px;color:var(--amber);text-transform:uppercase;font-family:'IBM Plex Mono',monospace}
 .hero h1{font-size:clamp(1.9rem,4.6vw,2.9rem);line-height:1.12;margin-bottom:14px;letter-spacing:-.5px}
 .hero p{font-size:1.06rem;color:#B9CBE0;max-width:640px;margin-bottom:28px}
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+.hero-actions{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:40px}
 .hero-flex{display:flex;gap:40px;align-items:center;flex-wrap:wrap}
 .hero-left{flex:1 1 420px;min-width:280px}
 .hero-right{flex:0 1 340px;min-width:260px}
