@@ -232,9 +232,6 @@ def seed_users():
     conn = get_db()
     _ensure_leaves_gallery(conn)
     users = [
-        ("21A31A0201", "student123", "student", "K. Venkata Surya",
-         "surya.21a31a0201@srisivani.edu.in", "A", "III-I (3rd Year, 1st Sem)",
-         "2021-25", 8.24, "", "Roll 21A31A0201"),
         ("faculty", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
          "hod.eee@srisivani.edu.in", "", "", "", None,
          "Professor & HoD", "M.Tech, Ph.D. - 18 years experience"),
