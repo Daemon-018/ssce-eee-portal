@@ -257,6 +257,19 @@ def seed_users():
         ("faculty", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
          "hod.eee@srisivani.edu.in", "", "", "", None,
          "Vice Principal", "M.Tech, Ph.D. - 18 years experience"),
+        # individual faculty accounts — username = faculty-name@gmail.com, pass faculty123
+        ("gtchandrasekhar@gmail.com", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
+         "gtchandrasekhar@gmail.com", "", "", "", None, "Vice Principal & Professor", ""),
+        ("kanthiandhavarapu@gmail.com", "faculty123", "faculty", "Dr. Kanthi Andhavarapu",
+         "kanthiandhavarapu@gmail.com", "", "", "", None, "HoD of EEE", ""),
+        ("majjisaisudha@gmail.com", "faculty123", "faculty", "Ms. Majji Sai Sudha",
+         "majjisaisudha@gmail.com", "", "", "", None, "Assistant Professor", ""),
+        ("padminianakapalli@gmail.com", "faculty123", "faculty", "Ms. Padmini Anakapalli",
+         "padminianakapalli@gmail.com", "", "", "", None, "Diploma HoD of EEE", ""),
+        ("praveenkumarjammu@gmail.com", "faculty123", "faculty", "Mr. Praveen Kumar Jammu",
+         "praveenkumarjammu@gmail.com", "", "", "", None, "Assistant Professor", ""),
+        ("maheswarambhanuchandhar@gmail.com", "faculty123", "faculty", "Dr. Maheswaram Bhanu Chandhar",
+         "maheswarambhanuchandhar@gmail.com", "", "", "", None, "Assistant Professor", ""),
     ]
     for u in users:
         exists = conn.execute("SELECT id FROM users WHERE username=?", (u[0],)).fetchone()
