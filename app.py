@@ -7,7 +7,7 @@ import sqlite3
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, g)
 
-from db import get_db, init_db, seed_users
+from db import get_db, init_db, seed_users, seed_faculty
 from seed_data import build_db
 
 app = Flask(__name__)
@@ -17,6 +17,7 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 init_db()
 seed_users()
+seed_faculty()
 
 # Fresh-deploy bootstrap: if the DB has no real data, rebuild it fully from seed_data.py
 _conn = get_db()
@@ -65,7 +66,7 @@ def login_required(role=None):
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template("home.html", faculty=_faculty_rows())
 
 
 @app.route("/login/<role>")
@@ -515,6 +516,109 @@ def careers():
     for r in rows:
         groups.setdefault(r["category"], []).append(r)
     return render_template("careers.html", groups=groups, meta=JOB_CATEGORY_META)
+
+
+# ============ faculty profiles (public) ============
+
+def _faculty_rows():
+    db = get_db_conn()
+    rows = db.execute(
+        "SELECT * FROM faculty_profiles WHERE active=1 ORDER BY sort_order, name"
+    ).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        for k in ("research", "subjects", "achievements"):
+            try:
+                d[k] = json.loads(d[k] or "[]")
+            except Exception:
+                d[k] = []
+        out.append(d)
+    return out
+
+
+@app.route("/faculty")
+def faculty_list():
+    return render_template("faculty.html", faculty=_faculty_rows())
+
+
+@app.route("/faculty/<slug>")
+def faculty_detail(slug):
+    rows = _faculty_rows()
+    prof = next((r for r in rows if r["slug"] == slug), None)
+    if not prof:
+        return render_template("404.html"), 404
+    return render_template("faculty_detail.html", prof=prof)
+
+
+@app.route("/faculty/manage", methods=["GET", "POST"])
+@login_required(role="faculty")
+def faculty_manage():
+    db = get_db_conn()
+    if request.method == "POST":
+        fid = request.form.get("fid", "")
+        name = request.form.get("name", "").strip()
+        photo = request.form.get("photo", "").strip() or "01_hod.jpg"
+        slug = request.form.get("slug", "").strip() or (
+            name.lower().replace(".", "").replace(",", "")
+            .replace("&", "and").replace("  ", " ")
+            .replace(" ", "-").replace("--", "-")
+        )
+        designation = request.form.get("designation", "").strip()
+        qualification = request.form.get("qualification", "").strip()
+        experience = request.form.get("experience", "").strip()
+        bio = request.form.get("bio", "").strip()
+        research = json.dumps([x.strip() for x in request.form.get("research", "").split(",") if x.strip()])
+        subjects = json.dumps([x.strip() for x in request.form.get("subjects", "").split(",") if x.strip()])
+        achievements = json.dumps([x.strip() for x in request.form.get("achievements", "").split(",") if x.strip()])
+        email = request.form.get("email", "").strip()
+        cabin = request.form.get("cabin", "").strip()
+        joined = request.form.get("joined_year", "").strip()
+        sort_order = int(request.form.get("sort_order", "0") or 0)
+        if not name:
+            flash("Name is required.", "error")
+        elif fid:
+            db.execute(
+                """UPDATE faculty_profiles SET slug=?,name=?,photo=?,designation=?,qualification=?,
+                   experience=?,bio=?,research=?,subjects=?,achievements=?,email=?,cabin=?,joined_year=?,sort_order=?
+                   WHERE id=?""",
+                (slug, name, photo, designation, qualification, experience, bio,
+                 research, subjects, achievements, email, cabin, joined, sort_order, fid),
+            )
+            db.commit()
+            flash("Faculty profile updated.", "success")
+        else:
+            db.execute(
+                """INSERT INTO faculty_profiles
+                   (slug,name,photo,designation,qualification,experience,bio,research,subjects,achievements,email,cabin,joined_year,sort_order,active)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                (slug, name, photo, designation, qualification, experience, bio,
+                 research, subjects, achievements, email, cabin, joined, sort_order),
+            )
+            db.commit()
+            flash("Faculty profile added.", "success")
+        return redirect(url_for("faculty_manage"))
+    rows = db.execute("SELECT * FROM faculty_profiles ORDER BY sort_order, name").fetchall()
+    faculty = []
+    for r in rows:
+        d = dict(r)
+        for k in ("research", "subjects", "achievements"):
+            try:
+                d[k] = json.loads(d[k] or "[]")
+            except Exception:
+                d[k] = []
+        faculty.append(d)
+    return render_template("faculty_manage.html", faculty=faculty)
+
+
+@app.route("/faculty/manage/<int:fid>/delete", methods=["POST"])
+@login_required(role="faculty")
+def faculty_delete(fid):
+    db = get_db_conn()
+    db.execute("DELETE FROM faculty_profiles WHERE id=?", (fid,))
+    db.commit()
+    flash("Faculty profile deleted.", "success")
+    return redirect(url_for("faculty_manage"))
 
 
 @app.route("/resume-builder", methods=["GET", "POST"])

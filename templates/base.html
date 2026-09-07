@@ -32,12 +32,14 @@
           <a href="{{ url_for('resume_builder') }}">Resume</a>
           {% else %}
           <a href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('faculty_manage') }}">Faculty</a>
           <a href="{{ url_for('fac_performance') }}">Performance</a>
           <a href="{{ url_for('fac_syllabus_tracker') }}">Syllabus</a>
           {% endif %}
           <a class="btn btn-sm btn-outline" href="{{ url_for('change_password') }}">Change Password</a>
           <a class="btn btn-sm btn-outline" href="{{ url_for('logout') }}">Logout</a>
         {% else %}
+          <a href="{{ url_for('faculty_list') }}">Faculty</a>
           <a class="btn btn-sm btn-outline" href="{{ url_for('login', role='student') }}">Student Login</a>
           <a class="btn btn-sm btn-solid" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
         {% endif %}

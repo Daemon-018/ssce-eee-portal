@@ -106,38 +106,19 @@
   <div class="container">
     <div class="eyebrow center">People</div>
     <h2 class="center">Our Faculty</h2>
-    <p class="center muted">Qualified and committed faculty with extensive experience.</p>
+    <p class="center muted">Qualified and committed faculty with extensive experience. Tap a card to see their profile.</p>
     <div class="faculty-grid">
-      <div class="card fcard">
-        <img src="{{ url_for('static', filename='images/faculty/01_hod.jpg') }}" alt="Dr.G.T. Chandra Sekhar">
-        <h3>Dr.G.T. Chandra Sekhar</h3>
-        <p class="muted">M.Tech, Ph.D.</p>
-        <span class="role-badge professor">Vice Principal</span>
-      </div>
-      <div class="card fcard">
-        <img src="{{ url_for('static', filename='images/faculty/03_kanthi.jpg') }}" alt="Dr.Kanthi Andhavarapu">
-        <h3>Dr.Kanthi Andhavarapu</h3>
-        <p class="muted">M.Tech, Ph.D.</p>
-        <span class="role-badge professor">HoD of EEE</span>
-      </div>
-      <div class="card fcard">
-        <img src="{{ url_for('static', filename='images/faculty/04_saisudha.jpg') }}" alt="Ms.Majji Sai Sudha">
-        <h3>Ms.Majji Sai Sudha</h3>
-        <p class="muted">M.Tech</p>
-        <span class="role-badge asst">Assistant Professor</span>
-      </div>
-      <div class="card fcard">
-        <img src="{{ url_for('static', filename='images/faculty/07_padmini.jpg') }}" alt="Ms.Padmini Anakapalli">
-        <h3>Ms.Padmini Anakapalli</h3>
-        <p class="muted">M.Tech</p>
-        <span class="role-badge associate">Diploma HoD of EEE</span>
-      </div>
-      <div class="card fcard">
-        <img src="{{ url_for('static', filename='images/faculty/08_praveen.jpg') }}" alt="Mr.Praveen Kumar Jammu">
-        <h3>Mr.Praveen Kumar Jammu</h3>
-        <p class="muted">M.Tech</p>
-        <span class="role-badge asst">Assistant Professor</span>
-      </div>
+      {% for f in faculty %}
+      <a class="card fcard fcard-link" href="{{ url_for('faculty_detail', slug=f.slug) }}">
+        <div class="fcard-img">
+          <img src="{{ url_for('static', filename='images/faculty/' ~ f.photo) }}" alt="{{ f.name }}" loading="lazy">
+        </div>
+        <h3>{{ f.name }}</h3>
+        <p class="muted">{{ f.qualification }}</p>
+        <span class="role-badge professor">{{ f.designation }}</span>
+        <div class="fcard-arrow">View Profile →</div>
+      </a>
+      {% endfor %}
     </div>
   </div>
 </section>

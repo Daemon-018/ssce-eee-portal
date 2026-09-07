@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Our Faculty{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <div class="page-head">
+      <div class="eyebrow">People</div>
+      <h1>Our Faculty</h1>
+      <p class="muted">Meet the EEE department team. Tap a card for full profile — qualifications, research, subjects taught.</p>
+    </div>
+    <div class="faculty-grid">
+      {% for f in faculty %}
+      <a class="card fcard fcard-link" href="{{ url_for('faculty_detail', slug=f.slug) }}">
+        <div class="fcard-img">
+          <img src="{{ url_for('static', filename='images/faculty/' ~ f.photo) }}" alt="{{ f.name }}" loading="lazy">
+        </div>
+        <h3>{{ f.name }}</h3>
+        <p class="muted">{{ f.qualification }}</p>
+        <span class="role-badge professor">{{ f.designation }}</span>
+        <div class="fcard-arrow">View Profile →</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

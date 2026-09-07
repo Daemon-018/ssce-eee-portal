@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ prof.name }}{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('faculty_list') }}">← All Faculty</a>
+
+    <div class="fprofile">
+      <div class="fprofile-hero card">
+        <div class="fprofile-img">
+          <img src="{{ url_for('static', filename='images/faculty/' ~ prof.photo) }}" alt="{{ prof.name }}">
+        </div>
+        <div class="fprofile-head">
+          <h1>{{ prof.name }}</h1>
+          <span class="role-badge professor">{{ prof.designation }}</span>
+          <p class="muted">{{ prof.qualification }}</p>
+          <div class="fprofile-meta">
+            {% if prof.experience %}<span><b>Experience</b> {{ prof.experience }}</span>{% endif %}
+            {% if prof.joined_year %}<span><b>Joined</b> {{ prof.joined_year }}</span>{% endif %}
+            {% if prof.email %}<span><b>Email</b> {{ prof.email }}</span>{% endif %}
+            {% if prof.cabin %}<span><b>Cabin</b> {{ prof.cabin }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if prof.bio %}
+      <div class="card fprofile-sec">
+        <h2>About</h2>
+        <p>{{ prof.bio }}</p>
+      </div>
+      {% endif %}
+
+      {% if prof.research %}
+      <div class="card fprofile-sec">
+        <h2>Research Areas</h2>
+        <div class="chip-wrap">
+          {% for r in prof.research %}<span class="chip">{{ r }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if prof.subjects %}
+      <div class="card fprofile-sec">
+        <h2>Subjects Taught</h2>
+        <div class="chip-wrap">
+          {% for s in prof.subjects %}<span class="chip chip-blue">{{ s }}</span>{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if prof.achievements %}
+      <div class="card fprofile-sec">
+        <h2>Achievements</h2>
+        <ul class="tick-list">
+          {% for a in prof.achievements %}<li>{{ a }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
