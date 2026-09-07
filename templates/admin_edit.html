@@ -2,12 +2,13 @@
 <html>
 <head>
     <title>Admin File Editor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .editor-container { max-width: 1000px; margin: 20px auto; padding: 20px; }
-        textarea { width: 100%; height: 600px; font-family: monospace; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        .toolbar { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-save { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        textarea { width: 100%; height: 600px; font-family: 'IBM Plex Mono', monospace; padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: .9rem; background: #fff; color: var(--ink); }
+        textarea:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: transparent; }
+        .toolbar { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .toolbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; color: var(--navy); }
     </style>
 </head>
 <body>
@@ -15,15 +16,15 @@
         <div class="toolbar">
             <h2>Editing: {{ filepath }}</h2>
             <form method="POST">
-                <button type="submit" class="btn-save">Save Changes</button>
+                <button type="submit" class="btn btn-solid">Save Changes</button>
             </form>
         </div>
         <form method="POST">
             <textarea name="content">{{ content }}</textarea>
-            <button type="submit" class="btn-save" style="margin-top:10px; width: 100%;">Save Changes</button>
+            <button type="submit" class="btn btn-solid btn-block" style="margin-top:10px;">Save Changes</button>
         </form>
         <br>
-        <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+        <a class="btn btn-outline" href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
     </div>
 </body>
 </html>
