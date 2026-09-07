@@ -318,6 +318,22 @@ def seed_faculty():
          ["Electrical Machines", "Power System Operation & Control", "Network Theory"],
          ["M.Tech, 6 years experience"],
          "praveen.eee@srisivani.edu.in", "Block A - Room 210", "2020", 5),
+        ("dr-maheswaram-bhanu-chandhar", "Dr. Maheswaram Bhanu Chandhar", "10_bhanuchandhar.webp",
+         "Assistant Professor", "M.Tech, Ph.D.",
+         "Lecturer at SVCE&T before July 2025",
+         "Indian academic and researcher in electrical engineering. Recognized for creating a miniature 8mm wind turbine. Ph.D. from CSJMU, Kanpur. Research focuses on renewable energy, smart grids, power quality, and AI in engineering.",
+         ["Hybrid Solar-Wind Microgrids & Smart Energy Management",
+          "AI-driven Decentralized Microgrid Optimization with BESS",
+          "Machine Learning for Electromagnetic Design (Rasorber)",
+          "Piezoelectric Energy Harvesting"],
+         ["Electrical and Electronics Engineering", "Renewable Energy Systems",
+          "Smart Grid Systems", "Power Quality", "AI in Engineering"],
+         ["Built 8mm miniature wind turbine — local media recognition",
+          "Ph.D. in EEE from CSJMU, Kanpur (2021-2025)",
+          "Google Scholar researcher",
+          "Published in Journal of Electrical Systems",
+          "ResearchGate published author"],
+         "", "", "2025", 6),
     ]
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM faculty_profiles")
