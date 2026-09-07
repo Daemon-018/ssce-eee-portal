@@ -1,763 +1,249 @@
-"""Sample data for EEE portal demo (JNTU-GV R23, 3-1 sem)."""
+"""Auto-generated seed data for EEE dept portal (from live eee.db).
+Rebuilds the full database on a fresh deploy (Render) - idempotent:
+drops and recreates all tables, then inserts current data, preserving password hashes.
+Regenerate with: .venv/bin/python export_seed.py
+"""
 
-NOTICES = [
-    ("Mid-I Examinations Schedule Released",
-     "Mid Semester-I examinations for 3-1 will be held from 18 Aug to 25 Aug 2026. "
-     "Attend without fail; bring your JNTU-GV hall ticket and ID card.",
-     "Exams", "2026-08-12"),
-    ("Industrial Visit - Power Grid Substation, Ravada",
-     "IV for III EEE on 29 Aug 2026, 9:00 AM. Bus departs from college main gate. "
-     "Submit ₹200 to the class representative by 25 Aug. Permission letters from parents required.",
-     "Industrial Visit", "2026-08-10"),
-    ("Workshop: MATLAB & Simulink for Power Systems",
-     "One-day hands-on workshop on 5 Sep 2026, EEE Seminar Hall, 10 AM. "
-     "Conducted by industry experts. Certificate provided. Limited to 60 seats - register at dept office.",
-     "Workshop", "2026-08-08"),
-    ("Attendance below 65% - Warning",
-     "Students with attendance below 65% must meet the class advisor before 15 Aug. "
-     "As per JNTU-GV norms, <75% attendance bars you from semester exams.",
-     "Attendance", "2026-08-05"),
-    ("M.Tech Power Electronics - Admissions Open",
-     "M.Tech Power Electronics 2026-27 admissions open. Intake 9 (Category A) + 3 (Category B). "
-     "Contact the EEE department office for application details.",
-     "Admissions", "2026-07-28"),
-]
+import sqlite3
 
-TIMETABLE = [
-    # (day 1=Mon..6=Sat, period 1..7, subject, faculty, room)
-    (1, 1, "Power System Analysis - II", "Dr. Kanthi Andhavarapu", "Room 204"),
-    (1, 2, "Electrical Machine Design", "Dr. Rajselvan C", "Room 204"),
-    (1, 3, "Control Systems", "Mr. Simma Gopi", "Room 204"),
-    (1, 4, "Microprocessors & Microcontrollers", "Ms. Majji Sai Sudha", "Lab-2"),
-    (1, 5, "Digital Signal Processing", "Mr. P. Bhargav", "Room 204"),
-    (1, 6, "Lunch", "", ""),
-    (1, 7, "EMA Lab", "Dr. Rajselvan C", "Machines Lab"),
+SCHEMA = {}
+ROWS = {}
 
-    (2, 1, "Electrical Machine Design", "Dr. Rajselvan C", "Room 204"),
-    (2, 2, "Power System Analysis - II", "Dr. Kanthi Andhavarapu", "Room 204"),
-    (2, 3, "Digital Signal Processing", "Mr. P. Bhargav", "Room 204"),
-    (2, 4, "Control Systems", "Mr. Simma Gopi", "Room 204"),
-    (2, 5, "Power Electronics - II", "Dr. G.T. Chandra Sekhar", "Room 204"),
-    (2, 6, "Lunch", "", ""),
-    (2, 7, "DSP Lab", "Mr. P. Bhargav", "DSP Lab"),
+SCHEMA["academic_calendar"] = """CREATE TABLE IF NOT EXISTS academic_calendar (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    event_date TEXT NOT NULL,
+    category TEXT DEFAULT 'Academic',
+    note TEXT DEFAULT ''
+)"""
 
-    (3, 1, "Control Systems", "Mr. Simma Gopi", "Room 204"),
-    (3, 2, "Microprocessors & Microcontrollers", "Ms. Majji Sai Sudha", "Room 204"),
-    (3, 3, "Power System Analysis - II", "Dr. Kanthi Andhavarapu", "Room 204"),
-    (3, 4, "Power Electronics - II", "Dr. G.T. Chandra Sekhar", "Room 204"),
-    (3, 5, "Electrical Machine Design", "Dr. Rajselvan C", "Room 204"),
-    (3, 6, "Lunch", "", ""),
-    (3, 7, "MPMC Lab", "Ms. Majji Sai Sudha", "MPMC Lab"),
+SCHEMA["attendance"] = """CREATE TABLE IF NOT EXISTS attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    attended INTEGER NOT NULL DEFAULT 0,
+    total INTEGER NOT NULL DEFAULT 0
+)"""
 
-    (4, 1, "Digital Signal Processing", "Mr. P. Bhargav", "Room 204"),
-    (4, 2, "Power Electronics - II", "Dr. G.T. Chandra Sekhar", "Room 204"),
-    (4, 3, "Power System Analysis - II", "Dr. Kanthi Andhavarapu", "Room 204"),
-    (4, 4, "Electrical Machine Design", "Dr. Rajselvan C", "Room 204"),
-    (4, 5, "Microprocessors & Microcontrollers", "Ms. Majji Sai Sudha", "Room 204"),
-    (4, 6, "Lunch", "", ""),
-    (4, 7, "PSA Lab", "Dr. Kanthi Andhavarapu", "Power Systems Lab"),
+SCHEMA["backlog"] = """CREATE TABLE IF NOT EXISTS backlog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    sem TEXT NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    cleared INTEGER DEFAULT 0,       -- 0=pending, 1=cleared
+    cleared_date TEXT DEFAULT '',
+    note TEXT DEFAULT ''
+)"""
 
-    (5, 1, "Power Electronics - II", "Dr. G.T. Chandra Sekhar", "Room 204"),
-    (5, 2, "Digital Signal Processing", "Mr. P. Bhargav", "Room 204"),
-    (5, 3, "Microprocessors & Microcontrollers", "Ms. Majji Sai Sudha", "Room 204"),
-    (5, 4, "Control Systems", "Mr. Simma Gopi", "Room 204"),
-    (5, 5, "Mentor Session / Sports", "", "Room 204"),
-    (5, 6, "Lunch", "", ""),
-    (5, 7, "Control Systems Lab", "Mr. Simma Gopi", "CS Lab"),
+SCHEMA["exam_notifications"] = """CREATE TABLE IF NOT EXISTS exam_notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    exam_type TEXT NOT NULL,          -- Regular | Supply
+    link TEXT DEFAULT '',
+    posted_on TEXT DEFAULT (date('now','localtime'))
+)"""
 
-    (6, 1, "Power System Analysis - II", "Dr. Kanthi Andhavarapu", "Room 204"),
-    (6, 2, "Electrical Machine Design", "Dr. Rajselvan C", "Room 204"),
-    (6, 3, "Library / Self Study", "", "Library"),
-    (6, 4, "Library / Self Study", "", "Library"),
-    (6, 5, "", "", ""),
-    (6, 6, "", "", ""),
-    (6, 7, "", "", ""),
-]
+SCHEMA["extra_classes"] = """CREATE TABLE IF NOT EXISTS extra_classes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    date TEXT NOT NULL,
+    time TEXT DEFAULT '',
+    room TEXT DEFAULT '',
+    targeted_to TEXT DEFAULT 'All',   -- All | backlog | specific usernames
+    notes TEXT DEFAULT '',
+    posted_by TEXT DEFAULT 'EEE Office'
+)"""
 
-SYLLABUS = [
-    ("Power System Analysis - II", "EE321", 4, [
-        ("I", ["Per Unit Analysis", "Symmetrical Components", "Sequence Networks of Generators, Transformers and Lines"]),
-        ("II", ["Symmetrical Fault Analysis", "Fault Current Computation", "Short Circuit Calculations"]),
-        ("III", ["Unsymmetrical Fault Analysis", "LG, LL, LLG Faults", "Open Conductor Faults"]),
-        ("IV", ["Power Flow Studies", "Gauss-Seidel, Newton-Raphson Methods", "Decoupled & Fast Decoupled Load Flow"]),
-        ("V", ["Economic Operation of Power Systems", "Unit Commitment", "Hydro-thermal Scheduling"]),
-        ("VI", ["Power System Stability", "Swing Equation", "Equal Area Criterion", "Improvement of Stability"]),
-    ]),
-    ("Power Electronics - II", "EE322", 4, [
-        ("I", ["DC-DC Converters", "Buck, Boost, Buck-Boost", "Cuk Converters"]),
-        ("II", ["Choppers and Applications", "Thyristorised Choppers", "Commutation Circuits"]),
-        ("III", ["Inverters", "Single & Three Phase Inverters", "PWM Techniques"]),
-        ("IV", ["AC Voltage Controllers", "Single & Three Phase Controllers", "Cycloconverters"]),
-        ("V", ["Power Supplies", "SMPS", "UPS Systems"]),
-        ("VI", ["Applications in Industry", "HVDC & FACTS Overview", "Renewable Integration"]),
-    ]),
-    ("Electrical Machine Design", "EE323", 4, [
-        ("I", ["Principles of Design", "Magnetic Circuit Design", "Specific Electric & Magnetic Loadings"]),
-        ("II", ["Design of DC Machines", "Output Equation", "Main Dimensions"]),
-        ("III", ["Design of Transformers", "Core & Winding Design", "Cooling Systems"]),
-        ("IV", ["Design of Induction Motors", "Stator & Rotor Design", "Squirrel Cage & Slip Ring"]),
-        ("V", ["Design of Synchronous Machines", "Field Winding Design", "Damper Windings"]),
-        ("VI", ["Computer Aided Machine Design", "Optimisation Techniques", "Thermal Design"]),
-    ]),
-    ("Control Systems", "EE324", 3, [
-        ("I", ["Mathematical Modelling", "Transfer Function, Block Diagrams", "Signal Flow Graphs"]),
-        ("II", ["Time Response Analysis", "Transient & Steady State Response", "Error Constants"]),
-        ("III", ["Stability Analysis", "Routh-Hurwitz Criterion", "Root Locus"]),
-        ("IV", ["Frequency Response Analysis", "Bode, Nyquist, Polar Plots", "Gain & Phase Margins"]),
-        ("V", ["State Space Analysis", "Controllability & Observability", "State Feedback"]),
-        ("VI", ["Compensators", "Lead, Lag, Lead-Lag", "PID Controllers"]),
-    ]),
-    ("Microprocessors & Microcontrollers", "EE325", 3, [
-        ("I", ["8086 Architecture", "Registers, Addressing Modes", "Instruction Set"]),
-        ("II", ["Assembly Language Programming", "Branching & Looping", "Data Transfer Operations"]),
-        ("III", ["Peripheral Interfacing", "8255, 8259, 8253", "Memory Interfacing"]),
-        ("IV", ["8051 Microcontroller", "Architecture & Timers", "Serial Communication"]),
-        ("V", ["8051 Programming", "I/O Port Programming", "Interrupts"]),
-        ("VI", ["Applications", "Stepper Motor Control", "DC Motor Control", "ADC/DAC Interfacing"]),
-    ]),
-    ("Digital Signal Processing", "EE326", 3, [
-        ("I", ["Discrete Time Signals & Systems", "Z-Transform", "Difference Equations"]),
-        ("II", ["DFT & FFT", "Properties of DFT", "Radix-2 FFT Algorithms"]),
-        ("III", ["IIR Filter Design", "Butterworth & Chebyshev", "Bilinear Transformation"]),
-        ("IV", ["FIR Filter Design", "Window Functions", "Frequency Sampling Method"]),
-        ("V", ["Realisation Structures", "Direct, Cascade, Parallel", "Lattice Structures"]),
-        ("VI", ["Applications", "Speech Processing", "Power System Signal Analysis"]),
-    ]),
-]
+SCHEMA["gallery"] = """CREATE TABLE IF NOT EXISTS gallery (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        filename TEXT,
+        caption TEXT,
+        added_at TEXT DEFAULT (datetime('now','localtime'))
+    )"""
 
-ATTENDANCE = {
-    "Power System Analysis - II": (38, 44),
-    "Power Electronics - II": (40, 44),
-    "Electrical Machine Design": (36, 44),
-    "Control Systems": (42, 44),
-    "Microprocessors & Microcontrollers": (39, 44),
-    "Digital Signal Processing": (33, 44),
-}
+SCHEMA["job_resources"] = """CREATE TABLE IF NOT EXISTS job_resources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,           -- core-govt | core-private | noncore-govt | noncore-private | reasoning | aptitude | arithmetic | resume
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    link TEXT DEFAULT '',
+    posted_on TEXT DEFAULT (date('now','localtime'))
+)"""
 
-# demo student roster (username, name, email, section, batch, cgpa)
-STUDENTS = [
-    ("21A31A0201", "K. Venkata Surya", "surya.21a31a0201@srisivani.edu.in", "A", "2021-25", 8.24),
-    ("21A31A0202", "P. Lakshmi Prasanna", "lakshmi.21a31a0202@srisivani.edu.in", "A", "2021-25", 7.86),
-    ("21A31A0203", "S. Raviteja", "raviteja.21a31a0203@srisivani.edu.in", "A", "2021-25", 7.42),
-    ("21A31A0204", "B. Sai Kiran", "saikiran.21a31a0204@srisivani.edu.in", "A", "2021-25", 8.02),
-    ("21A31A0205", "D. Naga Jyothi", "jyothi.21a31a0205@srisivani.edu.in", "B", "2021-25", 7.15),
-    ("21A31A0206", "M. Harish Kumar", "harish.21a31a0206@srisivani.edu.in", "B", "2021-25", 6.98),
-]
+SCHEMA["leaves"] = """CREATE TABLE IF NOT EXISTS leaves (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        name TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        from_date TEXT NOT NULL,
+        to_date TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )"""
 
-# demo students for all years
-# 1st year = 2025 batch (lateral entry: 25W65A02xx) -> 1-1/1-2 syllabus
-# 2nd year = 2024 batch (regular: 24A31A02xx)      -> 2-1/2-2 syllabus
-# 3rd year = 2021 batch (regular: 21A31A02xx)      -> 3-1/3-2 syllabus
-# 4th year = 2020 batch (regular: 20A31A02xx)      -> 4-1/4-2 syllabus
-# tuple: (username, name, password, email, section, batch, cgpa)
-NEW_STUDENTS = [
-    # ---- 1st year (2025 batch, lateral) ----
-    ("25W65A0201", "A. Sravani", "sravani@123", "sravani.25w65a0201@srisivani.edu.in", "A", "2025-29", 7.40),
-    ("25W65A0202", "B. Vamsi Krishna", "vamsi@123", "vamsi.25w65a0202@srisivani.edu.in", "A", "2025-29", 6.90),
-    ("25W65A0203", "Ch. Manasa", "manasa@123", "manasa.25w65a0203@srisivani.edu.in", "B", "2025-29", 7.80),
-    ("25W65A0204", "D. Ravi Teja", "ravi@123", "ravi.25w65a0204@srisivani.edu.in", "B", "2025-29", 6.50),
-    ("25W65A0205", "E. Bhavana", "bhavana@123", "bhavana.25w65a0205@srisivani.edu.in", "A", "2025-29", 8.10),
-    ("25W65A0206", "G. Suresh", "suresh@123", "suresh.25w65a0206@srisivani.edu.in", "B", "2025-29", 7.20),
-    ("25W65A0211", "G. Hemanth", "hemanth@123", "hemanth.25w65a0211@srisivani.edu.in", "", "2025-29", None),
-    ("25W65A0226", "N. Yagnesh", "yagnesh@123", "yagnesh.25w65a0226@srisivani.edu.in", "", "2025-29", None),
-    ("25W65A0228", "N. Poshan", "poshan@123", "poshan.25w65a0228@srisivani.edu.in", "", "2025-29", None),
-    ("25W65A0231", "P. Harshith", "harshith@123", "harshith.25w65a0231@srisivani.edu.in", "", "2025-29", None),
-    ("25W65A0236", "T. Akhil", "akhil@123", "akhil.25w65a0236@srisivani.edu.in", "", "2025-29", None),
-    # ---- 2nd year (2024 batch, regular) ----
-    ("24A31A0201", "H. Naga Sai", "nagasai@123", "nagasai.24a31a0201@srisivani.edu.in", "A", "2024-28", 7.60),
-    ("24A31A0202", "I. Pooja", "pooja@123", "pooja.24a31a0202@srisivani.edu.in", "A", "2024-28", 8.30),
-    ("24A31A0203", "J. Rakesh", "rakesh@123", "rakesh.24a31a0203@srisivani.edu.in", "B", "2024-28", 7.10),
-    ("24A31A0204", "K. Sandhya", "sandhya@123", "sandhya.24a31a0204@srisivani.edu.in", "B", "2024-28", 6.80),
-    ("24A31A0205", "M. Praveen Kumar", "praveenkumar@123", "praveenkumar.24a31a0205@srisivani.edu.in", "A", "2024-28", 7.90),
-    ("24A31A0206", "N. Divya", "divya@123", "divya.24a31a0206@srisivani.edu.in", "B", "2024-28", 8.00),
-    # ---- 4th year (2020 batch, regular) ----
-    ("20A31A0201", "O. Satish", "satish@123", "satish.20a31a0201@srisivani.edu.in", "A", "2020-24", 8.50),
-    ("20A31A0202", "P. Swathi", "swathi@123", "swathi.20a31a0202@srisivani.edu.in", "A", "2020-24", 7.70),
-    ("20A31A0203", "R. Anil Kumar", "anil@123", "anil.20a31a0203@srisivani.edu.in", "B", "2020-24", 7.30),
-    ("20A31A0204", "S. Lakshmi", "lakshmi@123", "lakshmi.20a31a0204@srisivani.edu.in", "B", "2020-24", 8.10),
-    ("20A31A0205", "T. Venkatesh", "venkatesh@123", "venkatesh.20a31a0205@srisivani.edu.in", "A", "2020-24", 6.90),
-    ("20A31A0206", "U. Meghana", "meghana@123", "meghana.20a31a0206@srisivani.edu.in", "B", "2020-24", 7.40),
-]
+SCHEMA["marks"] = """CREATE TABLE IF NOT EXISTS marks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    exam TEXT NOT NULL CHECK(exam IN ('MID1','MID2')),
+    marks INTEGER NOT NULL,
+    max_marks INTEGER DEFAULT 30,
+    updated_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(username, subject, exam)
+)"""
 
-# new faculty (username = email, password = <name>@123)
-NEW_FACULTY = [
-    ("praveen@gmail.com", "praveen@123", "Praveen", "praveen@gmail.com", "Assistant Professor", "EEE Dept"),
-    ("bhanuchandra@gmail.com", "bhanuchandra@123", "Bhanuchandra", "bhanuchandra@gmail.com", "Assistant Professor", "EEE Dept"),
-]
+SCHEMA["mentorship"] = """CREATE TABLE IF NOT EXISTS mentorship (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,           -- student roll
+    mentor TEXT NOT NULL,
+    last_meeting TEXT DEFAULT '',
+    next_meeting TEXT DEFAULT '',
+    notes TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+)"""
 
-# per-student attendance: {username: {subject: (attended, total)}}
-STUDENT_ATTENDANCE = {
-    "21A31A0201": {
-        "Power System Analysis - II": (38, 44), "Power Electronics - II": (40, 44),
-        "Electrical Machine Design": (36, 44), "Control Systems": (42, 44),
-        "Microprocessors & Microcontrollers": (39, 44), "Digital Signal Processing": (33, 44),
-    },
-    "21A31A0202": {
-        "Power System Analysis - II": (41, 44), "Power Electronics - II": (38, 44),
-        "Electrical Machine Design": (37, 44), "Control Systems": (40, 44),
-        "Microprocessors & Microcontrollers": (42, 44), "Digital Signal Processing": (36, 44),
-    },
-    "21A31A0203": {
-        "Power System Analysis - II": (35, 44), "Power Electronics - II": (39, 44),
-        "Electrical Machine Design": (34, 44), "Control Systems": (37, 44),
-        "Microprocessors & Microcontrollers": (38, 44), "Digital Signal Processing": (31, 44),
-    },
-    "21A31A0204": {
-        "Power System Analysis - II": (39, 44), "Power Electronics - II": (41, 44),
-        "Electrical Machine Design": (40, 44), "Control Systems": (41, 44),
-        "Microprocessors & Microcontrollers": (36, 44), "Digital Signal Processing": (37, 44),
-    },
-    "21A31A0205": {
-        "Power System Analysis - II": (36, 44), "Power Electronics - II": (35, 44),
-        "Electrical Machine Design": (33, 44), "Control Systems": (38, 44),
-        "Microprocessors & Microcontrollers": (37, 44), "Digital Signal Processing": (34, 44),
-    },
-    "21A31A0206": {
-        "Power System Analysis - II": (32, 44), "Power Electronics - II": (36, 44),
-        "Electrical Machine Design": (31, 44), "Control Systems": (35, 44),
-        "Microprocessors & Microcontrollers": (34, 44), "Digital Signal Processing": (29, 44),
-    },
-    # ---- 1st year (1-1 subjects) ----
-    "25W65A0201": {
-        "Linear Algebra and Calculus": (30, 34), "Chemistry": (31, 34),
-        "Introduction to Programming": (29, 34), "Engineering Graphics": (32, 34),
-        "Basic Electrical and Electronics Engineering": (30, 34),
-    },
-    "25W65A0202": {
-        "Linear Algebra and Calculus": (28, 34), "Chemistry": (30, 34),
-        "Introduction to Programming": (27, 34), "Engineering Graphics": (31, 34),
-        "Basic Electrical and Electronics Engineering": (29, 34),
-    },
-    "25W65A0203": {
-        "Linear Algebra and Calculus": (31, 34), "Chemistry": (30, 34),
-        "Introduction to Programming": (32, 34), "Engineering Graphics": (33, 34),
-        "Basic Electrical and Electronics Engineering": (31, 34),
-    },
-    "25W65A0204": {
-        "Linear Algebra and Calculus": (26, 34), "Chemistry": (28, 34),
-        "Introduction to Programming": (25, 34), "Engineering Graphics": (27, 34),
-        "Basic Electrical and Electronics Engineering": (26, 34),
-    },
-    "25W65A0205": {
-        "Linear Algebra and Calculus": (32, 34), "Chemistry": (33, 34),
-        "Introduction to Programming": (31, 34), "Engineering Graphics": (32, 34),
-        "Basic Electrical and Electronics Engineering": (33, 34),
-    },
-    "25W65A0206": {
-        "Linear Algebra and Calculus": (29, 34), "Chemistry": (30, 34),
-        "Introduction to Programming": (28, 34), "Engineering Graphics": (29, 34),
-        "Basic Electrical and Electronics Engineering": (30, 34),
-    },
-    # ---- 2nd year (2-2 subjects) ----
-    "24A31A0201": {
-        "Managerial Economics and Financial Analysis": (30, 36), "Analog Circuits": (32, 36),
-        "Power Systems-I": (31, 36), "Induction and Synchronous Machines": (33, 36),
-        "Control Systems": (32, 36),
-    },
-    "24A31A0202": {
-        "Managerial Economics and Financial Analysis": (33, 36), "Analog Circuits": (34, 36),
-        "Power Systems-I": (32, 36), "Induction and Synchronous Machines": (35, 36),
-        "Control Systems": (33, 36),
-    },
-    "24A31A0203": {
-        "Managerial Economics and Financial Analysis": (29, 36), "Analog Circuits": (30, 36),
-        "Power Systems-I": (28, 36), "Induction and Synchronous Machines": (31, 36),
-        "Control Systems": (29, 36),
-    },
-    "24A31A0204": {
-        "Managerial Economics and Financial Analysis": (27, 36), "Analog Circuits": (28, 36),
-        "Power Systems-I": (26, 36), "Induction and Synchronous Machines": (29, 36),
-        "Control Systems": (27, 36),
-    },
-    "24A31A0205": {
-        "Managerial Economics and Financial Analysis": (31, 36), "Analog Circuits": (32, 36),
-        "Power Systems-I": (30, 36), "Induction and Synchronous Machines": (34, 36),
-        "Control Systems": (31, 36),
-    },
-    "24A31A0206": {
-        "Managerial Economics and Financial Analysis": (30, 36), "Analog Circuits": (31, 36),
-        "Power Systems-I": (29, 36), "Induction and Synchronous Machines": (32, 36),
-        "Control Systems": (30, 36),
-    },
-    # ---- 4th year (4-1 subjects) ----
-    "20A31A0201": {
-        "Power System Operation and Control": (30, 34), "Energy Management and Auditing": (31, 34),
-        "HVDC Transmission": (32, 34), "FACTS": (30, 34),
-        "Electric Vehicles": (33, 34), "Battery Management Systems": (31, 34),
-        "Concepts of Smart Grid": (32, 34), "Concepts of Power Quality": (30, 34),
-    },
-    "20A31A0202": {
-        "Power System Operation and Control": (29, 34), "Energy Management and Auditing": (30, 34),
-        "HVDC Transmission": (31, 34), "FACTS": (28, 34),
-        "Electric Vehicles": (30, 34), "Battery Management Systems": (29, 34),
-        "Concepts of Smart Grid": (30, 34), "Concepts of Power Quality": (28, 34),
-    },
-    "20A31A0203": {
-        "Power System Operation and Control": (27, 34), "Energy Management and Auditing": (28, 34),
-        "HVDC Transmission": (29, 34), "FACTS": (26, 34),
-        "Electric Vehicles": (28, 34), "Battery Management Systems": (27, 34),
-        "Concepts of Smart Grid": (29, 34), "Concepts of Power Quality": (26, 34),
-    },
-    "20A31A0204": {
-        "Power System Operation and Control": (31, 34), "Energy Management and Auditing": (32, 34),
-        "HVDC Transmission": (30, 34), "FACTS": (31, 34),
-        "Electric Vehicles": (33, 34), "Battery Management Systems": (32, 34),
-        "Concepts of Smart Grid": (31, 34), "Concepts of Power Quality": (30, 34),
-    },
-    "20A31A0205": {
-        "Power System Operation and Control": (26, 34), "Energy Management and Auditing": (27, 34),
-        "HVDC Transmission": (28, 34), "FACTS": (25, 34),
-        "Electric Vehicles": (27, 34), "Battery Management Systems": (26, 34),
-        "Concepts of Smart Grid": (28, 34), "Concepts of Power Quality": (25, 34),
-    },
-    "20A31A0206": {
-        "Power System Operation and Control": (28, 34), "Energy Management and Auditing": (29, 34),
-        "HVDC Transmission": (30, 34), "FACTS": (27, 34),
-        "Electric Vehicles": (29, 34), "Battery Management Systems": (28, 34),
-        "Concepts of Smart Grid": (30, 34), "Concepts of Power Quality": (27, 34),
-    },
-}
+SCHEMA["notices"] = """CREATE TABLE IF NOT EXISTS notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    category TEXT DEFAULT 'General',
+    posted_on TEXT DEFAULT (date('now','localtime')),
+    author TEXT DEFAULT 'EEE Office'
+)"""
 
-# sample marks: {username: {subject: {"MID1": 22, "MID2": 25}}}  (max 30 each)
-STUDENT_MARKS = {
-    "21A31A0201": {
-        "Power System Analysis - II": {"MID1": 24, "MID2": 22},
-        "Power Electronics - II": {"MID1": 25, "MID2": 26},
-        "Electrical Machine Design": {"MID1": 21, "MID2": 23},
-        "Control Systems": {"MID1": 27, "MID2": 25},
-        "Microprocessors & Microcontrollers": {"MID1": 22, "MID2": 20},
-        "Digital Signal Processing": {"MID1": 19, "MID2": 21},
-    },
-    "21A31A0202": {
-        "Power System Analysis - II": {"MID1": 23, "MID2": 24},
-        "Power Electronics - II": {"MID1": 22, "MID2": 21},
-        "Electrical Machine Design": {"MID1": 24, "MID2": 22},
-        "Control Systems": {"MID1": 26, "MID2": 24},
-        "Microprocessors & Microcontrollers": {"MID1": 21, "MID2": 23},
-        "Digital Signal Processing": {"MID1": 20, "MID2": 18},
-    },
-    "21A31A0203": {
-        "Power System Analysis - II": {"MID1": 18, "MID2": 20},
-        "Power Electronics - II": {"MID1": 19, "MID2": 21},
-        "Electrical Machine Design": {"MID1": 17, "MID2": 18},
-        "Control Systems": {"MID1": 21, "MID2": 19},
-        "Microprocessors & Microcontrollers": {"MID1": 16, "MID2": 18},
-        "Digital Signal Processing": {"MID1": 15, "MID2": 17},
-    },
-    "21A31A0204": {
-        "Power System Analysis - II": {"MID1": 25, "MID2": 26},
-        "Power Electronics - II": {"MID1": 24, "MID2": 25},
-        "Electrical Machine Design": {"MID1": 22, "MID2": 24},
-        "Control Systems": {"MID1": 25, "MID2": 26},
-        "Microprocessors & Microcontrollers": {"MID1": 23, "MID2": 22},
-        "Digital Signal Processing": {"MID1": 21, "MID2": 23},
-    },
-    "21A31A0205": {
-        "Power System Analysis - II": {"MID1": 20, "MID2": 19},
-        "Power Electronics - II": {"MID1": 21, "MID2": 18},
-        "Electrical Machine Design": {"MID1": 19, "MID2": 20},
-        "Control Systems": {"MID1": 22, "MID2": 21},
-        "Microprocessors & Microcontrollers": {"MID1": 18, "MID2": 17},
-        "Digital Signal Processing": {"MID1": 17, "MID2": 16},
-    },
-    "21A31A0206": {
-        "Power System Analysis - II": {"MID1": 16, "MID2": 18},
-        "Power Electronics - II": {"MID1": 15, "MID2": 17},
-        "Electrical Machine Design": {"MID1": 14, "MID2": 16},
-        "Control Systems": {"MID1": 18, "MID2": 17},
-        "Microprocessors & Microcontrollers": {"MID1": 15, "MID2": 14},
-        "Digital Signal Processing": {"MID1": 13, "MID2": 15},
-    },
-    # ---- 1st year (1-1 subjects) ----
-    "25W65A0201": {
-        "Linear Algebra and Calculus": {"MID1": 22, "MID2": 24},
-        "Chemistry": {"MID1": 25, "MID2": 23},
-        "Introduction to Programming": {"MID1": 21, "MID2": 20},
-        "Engineering Graphics": {"MID1": 26, "MID2": 24},
-        "Basic Electrical and Electronics Engineering": {"MID1": 23, "MID2": 22},
-    },
-    "25W65A0202": {
-        "Linear Algebra and Calculus": {"MID1": 18, "MID2": 19},
-        "Chemistry": {"MID1": 20, "MID2": 21},
-        "Introduction to Programming": {"MID1": 17, "MID2": 18},
-        "Engineering Graphics": {"MID1": 19, "MID2": 20},
-        "Basic Electrical and Electronics Engineering": {"MID1": 18, "MID2": 19},
-    },
-    "25W65A0203": {
-        "Linear Algebra and Calculus": {"MID1": 24, "MID2": 25},
-        "Chemistry": {"MID1": 23, "MID2": 24},
-        "Introduction to Programming": {"MID1": 25, "MID2": 22},
-        "Engineering Graphics": {"MID1": 26, "MID2": 25},
-        "Basic Electrical and Electronics Engineering": {"MID1": 24, "MID2": 23},
-    },
-    "25W65A0204": {
-        "Linear Algebra and Calculus": {"MID1": 15, "MID2": 16},
-        "Chemistry": {"MID1": 17, "MID2": 18},
-        "Introduction to Programming": {"MID1": 14, "MID2": 15},
-        "Engineering Graphics": {"MID1": 16, "MID2": 17},
-        "Basic Electrical and Electronics Engineering": {"MID1": 15, "MID2": 16},
-    },
-    "25W65A0205": {
-        "Linear Algebra and Calculus": {"MID1": 26, "MID2": 27},
-        "Chemistry": {"MID1": 25, "MID2": 26},
-        "Introduction to Programming": {"MID1": 24, "MID2": 25},
-        "Engineering Graphics": {"MID1": 27, "MID2": 26},
-        "Basic Electrical and Electronics Engineering": {"MID1": 26, "MID2": 25},
-    },
-    "25W65A0206": {
-        "Linear Algebra and Calculus": {"MID1": 20, "MID2": 21},
-        "Chemistry": {"MID1": 21, "MID2": 20},
-        "Introduction to Programming": {"MID1": 19, "MID2": 18},
-        "Engineering Graphics": {"MID1": 22, "MID2": 21},
-        "Basic Electrical and Electronics Engineering": {"MID1": 20, "MID2": 19},
-    },
-    # ---- 2nd year (2-2 subjects) ----
-    "24A31A0201": {
-        "Managerial Economics and Financial Analysis": {"MID1": 22, "MID2": 24},
-        "Analog Circuits": {"MID1": 25, "MID2": 23},
-        "Power Systems-I": {"MID1": 21, "MID2": 22},
-        "Induction and Synchronous Machines": {"MID1": 24, "MID2": 25},
-        "Control Systems": {"MID1": 23, "MID2": 24},
-    },
-    "24A31A0202": {
-        "Managerial Economics and Financial Analysis": {"MID1": 26, "MID2": 25},
-        "Analog Circuits": {"MID1": 27, "MID2": 26},
-        "Power Systems-I": {"MID1": 24, "MID2": 25},
-        "Induction and Synchronous Machines": {"MID1": 28, "MID2": 27},
-        "Control Systems": {"MID1": 26, "MID2": 25},
-    },
-    "24A31A0203": {
-        "Managerial Economics and Financial Analysis": {"MID1": 19, "MID2": 20},
-        "Analog Circuits": {"MID1": 21, "MID2": 19},
-        "Power Systems-I": {"MID1": 18, "MID2": 20},
-        "Induction and Synchronous Machines": {"MID1": 20, "MID2": 21},
-        "Control Systems": {"MID1": 19, "MID2": 18},
-    },
-    "24A31A0204": {
-        "Managerial Economics and Financial Analysis": {"MID1": 17, "MID2": 18},
-        "Analog Circuits": {"MID1": 18, "MID2": 17},
-        "Power Systems-I": {"MID1": 16, "MID2": 18},
-        "Induction and Synchronous Machines": {"MID1": 19, "MID2": 17},
-        "Control Systems": {"MID1": 17, "MID2": 16},
-    },
-    "24A31A0205": {
-        "Managerial Economics and Financial Analysis": {"MID1": 23, "MID2": 24},
-        "Analog Circuits": {"MID1": 24, "MID2": 23},
-        "Power Systems-I": {"MID1": 22, "MID2": 21},
-        "Induction and Synchronous Machines": {"MID1": 25, "MID2": 24},
-        "Control Systems": {"MID1": 23, "MID2": 22},
-    },
-    "24A31A0206": {
-        "Managerial Economics and Financial Analysis": {"MID1": 21, "MID2": 22},
-        "Analog Circuits": {"MID1": 23, "MID2": 21},
-        "Power Systems-I": {"MID1": 20, "MID2": 19},
-        "Induction and Synchronous Machines": {"MID1": 22, "MID2": 23},
-        "Control Systems": {"MID1": 21, "MID2": 20},
-    },
-    # ---- 4th year (4-1 subjects) ----
-    "20A31A0201": {
-        "Power System Operation and Control": {"MID1": 26, "MID2": 27},
-        "Energy Management and Auditing": {"MID1": 25, "MID2": 26},
-        "HVDC Transmission": {"MID1": 24, "MID2": 25},
-        "FACTS": {"MID1": 26, "MID2": 24},
-        "Electric Vehicles": {"MID1": 27, "MID2": 26},
-        "Battery Management Systems": {"MID1": 25, "MID2": 25},
-        "Concepts of Smart Grid": {"MID1": 26, "MID2": 27},
-        "Concepts of Power Quality": {"MID1": 24, "MID2": 25},
-    },
-    "20A31A0202": {
-        "Power System Operation and Control": {"MID1": 23, "MID2": 24},
-        "Energy Management and Auditing": {"MID1": 24, "MID2": 23},
-        "HVDC Transmission": {"MID1": 22, "MID2": 23},
-        "FACTS": {"MID1": 21, "MID2": 22},
-        "Electric Vehicles": {"MID1": 24, "MID2": 23},
-        "Battery Management Systems": {"MID1": 23, "MID2": 22},
-        "Concepts of Smart Grid": {"MID1": 24, "MID2": 24},
-        "Concepts of Power Quality": {"MID1": 22, "MID2": 21},
-    },
-    "20A31A0203": {
-        "Power System Operation and Control": {"MID1": 20, "MID2": 21},
-        "Energy Management and Auditing": {"MID1": 21, "MID2": 20},
-        "HVDC Transmission": {"MID1": 19, "MID2": 20},
-        "FACTS": {"MID1": 18, "MID2": 19},
-        "Electric Vehicles": {"MID1": 21, "MID2": 20},
-        "Battery Management Systems": {"MID1": 20, "MID2": 19},
-        "Concepts of Smart Grid": {"MID1": 21, "MID2": 22},
-        "Concepts of Power Quality": {"MID1": 19, "MID2": 18},
-    },
-    "20A31A0204": {
-        "Power System Operation and Control": {"MID1": 25, "MID2": 26},
-        "Energy Management and Auditing": {"MID1": 24, "MID2": 25},
-        "HVDC Transmission": {"MID1": 23, "MID2": 24},
-        "FACTS": {"MID1": 25, "MID2": 24},
-        "Electric Vehicles": {"MID1": 26, "MID2": 25},
-        "Battery Management Systems": {"MID1": 24, "MID2": 25},
-        "Concepts of Smart Grid": {"MID1": 25, "MID2": 26},
-        "Concepts of Power Quality": {"MID1": 23, "MID2": 24},
-    },
-    "20A31A0205": {
-        "Power System Operation and Control": {"MID1": 18, "MID2": 19},
-        "Energy Management and Auditing": {"MID1": 19, "MID2": 18},
-        "HVDC Transmission": {"MID1": 17, "MID2": 18},
-        "FACTS": {"MID1": 16, "MID2": 17},
-        "Electric Vehicles": {"MID1": 19, "MID2": 18},
-        "Battery Management Systems": {"MID1": 18, "MID2": 17},
-        "Concepts of Smart Grid": {"MID1": 19, "MID2": 20},
-        "Concepts of Power Quality": {"MID1": 17, "MID2": 16},
-    },
-    "20A31A0206": {
-        "Power System Operation and Control": {"MID1": 22, "MID2": 23},
-        "Energy Management and Auditing": {"MID1": 21, "MID2": 22},
-        "HVDC Transmission": {"MID1": 20, "MID2": 21},
-        "FACTS": {"MID1": 19, "MID2": 20},
-        "Electric Vehicles": {"MID1": 22, "MID2": 21},
-        "Battery Management Systems": {"MID1": 21, "MID2": 20},
-        "Concepts of Smart Grid": {"MID1": 22, "MID2": 23},
-        "Concepts of Power Quality": {"MID1": 20, "MID2": 19},
-    },
-}
+SCHEMA["pyq"] = """CREATE TABLE IF NOT EXISTS pyq (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    year TEXT NOT NULL,
+    exam TEXT NOT NULL DEFAULT 'Regular',  -- Regular | Supply
+    download TEXT DEFAULT ''
+)"""
 
-SUBJECTS = [
-    "Power System Analysis - II", "Power Electronics - II", "Electrical Machine Design",
-    "Control Systems", "Microprocessors & Microcontrollers", "Digital Signal Processing",
-]
+SCHEMA["resume_builder"] = """CREATE TABLE IF NOT EXISTS resume_builder (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    data TEXT DEFAULT '{}',           -- JSON: {fullname,email,phone,objective,education:[],skills:[],projects:[],certifications:[],achievements:[]}
+    updated_at TEXT DEFAULT (datetime('now','localtime'))
+)"""
 
-# ============ v3: study materials ============
-# (subject, title, kind, link)
-STUDY_MATERIALS = [
-    ("Power System Analysis - II", "Unit I - Per Unit Analysis & Symmetrical Components (Notes)", "notes", ""),
-    ("Power System Analysis - II", "Fault Analysis - Complete Handwritten Notes (PDF)", "pdf", "#"),
-    ("Power System Analysis - II", "Gauss-Seidel vs Newton-Raphson - Comparison PPT", "ppt", "#"),
-    ("Power System Analysis - II", "Stability Analysis - Video Lectures (Playlist)", "video", "https://www.youtube.com/results?search_query=power+system+stability+swing+equation"),
-    ("Power Electronics - II", "DC-DC Converters - Buck, Boost, Buck-Boost (Notes)", "notes", ""),
-    ("Power Electronics - II", "Inverters & PWM Techniques - Unit III Notes", "notes", ""),
-    ("Power Electronics - II", "SMPS & UPS - Reference Material (PDF)", "pdf", "#"),
-    ("Power Electronics - II", "Choppers & Commutation - Video Lectures", "video", "https://www.youtube.com/results?search_query=choppers+power+electronics"),
-    ("Electrical Machine Design", "Design of Transformers - Core & Winding (Notes)", "notes", ""),
-    ("Electrical Machine Design", "Design of DC Machines - Output Equation Notes", "notes", ""),
-    ("Electrical Machine Design", "Machine Design Data Book (PDF)", "pdf", "#"),
-    ("Control Systems", "Unit I - Transfer Function & Block Diagrams (Notes)", "notes", ""),
-    ("Control Systems", "Root Locus Technique - Step-by-step (PDF)", "pdf", "#"),
-    ("Control Systems", "Bode & Nyquist Plots - Video Lectures", "video", "https://www.youtube.com/results?search_query=bode+plot+control+systems"),
-    ("Microprocessors & Microcontrollers", "8086 Architecture & Instruction Set (Notes)", "notes", ""),
-    ("Microprocessors & Microcontrollers", "8051 Programming Examples (PDF)", "pdf", "#"),
-    ("Microprocessors & Microcontrollers", "Peripheral Interfacing - 8255, 8259 (PPT)", "ppt", "#"),
-    ("Digital Signal Processing", "Z-Transform & Difference Equations (Notes)", "notes", ""),
-    ("Digital Signal Processing", "DFT & FFT Algorithms - Notes", "notes", ""),
-    ("Digital Signal Processing", "IIR / FIR Filter Design - Video Lectures", "video", "https://www.youtube.com/results?search_query=IIR+FIR+filter+design+dsp"),
-]
+SCHEMA["solved_papers"] = """CREATE TABLE IF NOT EXISTS solved_papers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    year TEXT NOT NULL,
+    exam TEXT NOT NULL DEFAULT 'Regular',
+    link TEXT DEFAULT ''
+)"""
 
-# ============ v3: previous year question papers ============
-# (subject, year, exam, download)
-PYQ = [
-    ("Power System Analysis - II", "2025", "Regular", "#"),
-    ("Power System Analysis - II", "2024", "Regular", "#"),
-    ("Power System Analysis - II", "2024", "Supply", "#"),
-    ("Power System Analysis - II", "2023", "Regular", "#"),
-    ("Power Electronics - II", "2025", "Regular", "#"),
-    ("Power Electronics - II", "2024", "Regular", "#"),
-    ("Power Electronics - II", "2023", "Supply", "#"),
-    ("Electrical Machine Design", "2025", "Regular", "#"),
-    ("Electrical Machine Design", "2024", "Regular", "#"),
-    ("Electrical Machine Design", "2023", "Regular", "#"),
-    ("Control Systems", "2025", "Regular", "#"),
-    ("Control Systems", "2024", "Regular", "#"),
-    ("Control Systems", "2024", "Supply", "#"),
-    ("Control Systems", "2023", "Regular", "#"),
-    ("Microprocessors & Microcontrollers", "2025", "Regular", "#"),
-    ("Microprocessors & Microcontrollers", "2024", "Regular", "#"),
-    ("Microprocessors & Microcontrollers", "2023", "Supply", "#"),
-    ("Digital Signal Processing", "2025", "Regular", "#"),
-    ("Digital Signal Processing", "2024", "Regular", "#"),
-    ("Digital Signal Processing", "2023", "Regular", "#"),
-]
+SCHEMA["study_materials"] = """CREATE TABLE IF NOT EXISTS study_materials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    title TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'notes',   -- notes | pdf | link | ppt | video
+    link TEXT DEFAULT '',
+    uploaded_by TEXT DEFAULT 'EEE Dept',
+    posted_on TEXT DEFAULT (date('now','localtime'))
+)"""
 
-# ============ v3: solved answers ============
-# (subject, year, exam, link)
-SOLVED_PAPERS = [
-    ("Power System Analysis - II", "2024", "Regular", "#"),
-    ("Power System Analysis - II", "2023", "Regular", "#"),
-    ("Power Electronics - II", "2024", "Regular", "#"),
-    ("Power Electronics - II", "2023", "Regular", "#"),
-    ("Electrical Machine Design", "2024", "Regular", "#"),
-    ("Control Systems", "2024", "Regular", "#"),
-    ("Control Systems", "2023", "Regular", "#"),
-    ("Microprocessors & Microcontrollers", "2024", "Regular", "#"),
-    ("Digital Signal Processing", "2024", "Regular", "#"),
-    ("Digital Signal Processing", "2023", "Regular", "#"),
-]
+SCHEMA["syllabus"] = """CREATE TABLE IF NOT EXISTS syllabus (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    program TEXT DEFAULT 'B.Tech',
+    year_sem TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    code TEXT DEFAULT '',
+    credits INTEGER DEFAULT 3,
+    units TEXT DEFAULT '[]'          -- JSON list of {"unit":"I","topics":[...]}
+)"""
 
-# ============ v3: academic calendar ============
-# (title, date, category, note)
-ACADEMIC_CALENDAR = [
-    ("Commencement of 3-1 Classes", "2026-06-15", "Academic", "Regular class work starts"),
-    ("I Mid-Term Examinations", "2026-08-18", "Exams", "MID-1 for all 3-1 subjects"),
-    ("I Mid Result Declaration", "2026-08-30", "Exams", ""),
-    ("II Mid-Term Examinations", "2026-10-12", "Exams", "MID-2 for all 3-1 subjects"),
-    ("Last Working Day", "2026-11-07", "Academic", "End of instruction"),
-    ("Semester End (R23) Examinations", "2026-11-16", "Exams", "JNTU-GV regular exams"),
-    ("Results Declaration", "2026-12-22", "Exams", "Expected date"),
-    ("Supply (Backlog) Examinations", "2027-01-18", "Exams", "For failed subjects"),
-    ("Commencement of 3-2 Classes", "2027-01-04", "Academic", "Next semester begins"),
-]
+SCHEMA["syllabus_tracker"] = """CREATE TABLE IF NOT EXISTS syllabus_tracker (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    status TEXT DEFAULT 'Pending',    -- Pending | In Progress | Completed
+    covered_on TEXT DEFAULT '',
+    updated_by TEXT DEFAULT ''
+)"""
 
-# ============ v3: backlog tracker (per student) ============
-# (username, subject, sem, attempts, cleared, cleared_date, note)
-BACKLOGS = {
-    "21A31A0201": [],
-    "21A31A0202": [
-        ("Electrical Machines - II", "2-2", 1, 1, "2026-03-10", "Cleared in supply exam"),
-    ],
-    "21A31A0203": [
-        ("Power Systems - I", "2-2", 1, 0, "", "Appear in Jan 2027 supply"),
-        ("Network Analysis", "2-1", 2, 0, "", "Second attempt - study regularly"),
-    ],
-    "21A31A0204": [],
-    "21A31A0205": [
-        ("Electrical Machines - II", "2-2", 1, 0, "", "Appear in Jan 2027 supply"),
-    ],
-    "21A31A0206": [
-        ("Network Analysis", "2-1", 1, 0, "", "Appear in Jan 2027 supply"),
-        ("Power Systems - I", "2-2", 1, 0, "", "Appear in Jan 2027 supply"),
-        ("Control Systems", "2-2", 1, 0, "", "Extra class target"),
-    ],
-}
+SCHEMA["timetable"] = """CREATE TABLE IF NOT EXISTS timetable (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    program TEXT DEFAULT 'B.Tech',
+    year_sem TEXT NOT NULL,
+    day INTEGER NOT NULL,            -- 1=Mon .. 6=Sat
+    period INTEGER NOT NULL,         -- 1..7
+    subject TEXT NOT NULL,
+    faculty TEXT DEFAULT '',
+    room TEXT DEFAULT ''
+)"""
 
-# ============ v3: exam notifications ============
-# (title, body, exam_type, link)
-EXAM_NOTIFICATIONS = [
-    ("JNTU-GV R23 Semester End Examination - Time Table Released",
-     "The schedule for 3-1 semester end (Regular) examinations is out. Download the timetable and verify your subjects.",
-     "Regular", "#"),
-    ("Supply (Backlog) Examinations - January 2027",
-     "Applications for supply exams open from 20 Dec 2026. Apply online with the prescribed fee before the last date.",
-     "Supply", "#"),
-    ("I Mid-Term Examinations - Hall Ticket",
-     "MID-1 hall tickets available from the department office. Bring your ID card to the exam hall.",
-     "Regular", "#"),
-    ("Practical Examinations (Lab Internals)",
-     "Lab internals for all EEE labs scheduled from 5 Nov 2026. Record submission is compulsory.",
-     "Regular", "#"),
-]
+SCHEMA["users"] = """CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('student','faculty')),
+    name TEXT NOT NULL,
+    extra TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now','localtime'))
+, email TEXT DEFAULT '', section TEXT DEFAULT '', year TEXT DEFAULT '', batch TEXT DEFAULT '', cgpa REAL, designation TEXT DEFAULT '', entry TEXT DEFAULT 'regular', is_admin INTEGER DEFAULT 0)"""
 
-# ============ v3: mentorship ============
-# (username, mentor, last_meeting, next_meeting, notes)
-MENTORSHIP = {
-    "21A31A0201": ("Dr. G.T. Chandra Sekhar", "2026-08-05", "2026-09-02", "Academic progress on track. Continue consistent performance."),
-    "21A31A0202": ("Dr. G.T. Chandra Sekhar", "2026-08-05", "2026-09-02", "Improve attendance in DSP. Practice numerical problems."),
-    "21A31A0203": ("Dr. Rajselvan C", "2026-08-04", "2026-09-01", "Focus on clearing backlog subjects. Extra classes advised."),
-    "21A31A0204": ("Dr. Kanthi Andhavarapu", "2026-08-06", "2026-09-03", "Good performance. Consider taking up technical paper presentation."),
-    "21A31A0205": ("Dr. Rajselvan C", "2026-08-04", "2026-09-01", "Backlog - attend extra classes for Electrical Machines."),
-    "21A31A0206": ("Dr. Kanthi Andhavarapu", "2026-08-06", "2026-09-03", "Multiple backlogs - weekly meeting with mentor scheduled."),
-}
 
-# ============ v3: job resources ============
-# (category, title, description, link)
-JOB_RESOURCES = [
-    ("core-govt", "SSC JE (Electrical) - Staff Selection Commission",
-     "Junior Engineer exam for Electrical discipline. Apply via ssc.gov.in. Includes Paper-I (Objective) + Paper-II (Conventional).",
-     "https://ssc.gov.in"),
-    ("core-govt", "RRB JE / ALP - Railway Recruitment Board",
-     "Junior Engineer and Assistant Loco Pilot posts for Electrical. Notification from rrbcdg.gov.in.",
-     "https://rrbcdg.gov.in"),
-    ("core-govt", "APSPDCL / APTRANSCO - AP Power Sector",
-     "Assistant Engineer / Junior Lineman recruitment by AP power utilities. Track apdcl.ap.gov.in for notifications.",
-     "https://www.apdcl.ap.gov.in"),
-    ("core-govt", "DRDO / ISRO / BARC Technical Posts",
-     "Research and technical entry for EEE graduates through DRDO CEPTAM, ISRO Scientist/Engineer, BARC OCES.",
-     "https://www.drdo.gov.in"),
-    ("core-private", "L&T, Siemens, ABB, Schneider Electric",
-     "Core EEE companies hiring for design, project and site engineering roles. Off-campus drives announced on company career pages.",
-     "https://www.siemens.com"),
-    ("core-private", "Tata Power, Adani, NTPC (via GATE)",
-     "Power sector PSUs recruiting through GATE score. Electrical core roles in generation, transmission and distribution.",
-     "https://www.tatapower.com"),
-    ("noncore-govt", "IBPS PO / Clerk & SBI Exams",
-     "Banking sector recruitment - eligibility for all graduates. Prepare with ibps.in notifications.",
-     "https://www.ibps.in"),
-    ("noncore-govt", "APPSC Group - I / II / IV",
-     "Andhra Pradesh state government posts open to engineering graduates. Check psc.ap.gov.in.",
-     "https://psc.ap.gov.in"),
-    ("noncore-govt", "Defence - AFCAT / CDS / NDA & Police (SI/Constable)",
-     "Defence and police recruitment for graduates. AFCAT via afcat.cdac.in.",
-     "https://afcat.cdac.in"),
-    ("noncore-private", "TCS NQT, Infosys, Wipro, Cognizant",
-     "IT services companies hiring all branches through NQT / off-campus tests. Focus on aptitude + coding basics.",
-     "https://www.tcs.com"),
-    ("noncore-private", "Amazon, Deloitte, Accenture, Tech Mahindra",
-     "Non-core IT and consulting roles open to EEE graduates. Off-campus drives throughout the year.",
-     "https://www.accenture.com"),
-    ("reasoning", "IndiaBix - Logical Reasoning",
-     "Large question bank for logical and verbal reasoning with explanations.",
-     "https://www.indiabix.com"),
-    ("reasoning", "Testbook - Reasoning Practice",
-     "Free daily reasoning quizzes and mock tests for govt exams.",
-     "https://testbook.com"),
-    ("aptitude", "IndiaBix - Quantitative Aptitude",
-     "Aptitude questions with step-by-step solutions - core company test prep.",
-     "https://www.indiabix.com/aptitude/questions-and-answers/"),
-    ("aptitude", "GeeksforGeeks - Aptitude",
-     "Aptitude practice and placement preparation articles.",
-     "https://www.geeksforgeeks.org/aptitude-gq/"),
-    ("arithmetic", "Speed Arithmetic - Math shortcut techniques",
-     "Vedic math and speed calculation techniques for exams.",
-     "https://www.cuemath.com/learn/vedic-maths/"),
-    ("arithmetic", "Arithmetic Practice - Career Power",
-     "Arithmetic questions for SSC / banking with shortcuts.",
-     "https://careerpower.in/arithmetic-questions.html"),
-    ("resume", "Resume Builder - Module",
-     "Use the in-site Resume Builder to create your EEE resume step by step.",
-     "/resume"),
-]
+def build_db(db_path="eee.db"):
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    for t in SCHEMA:
+        conn.execute("DROP TABLE IF EXISTS %s" % t)
+        conn.execute(SCHEMA[t])
 
-# ============ v3: extra classes ============
-# (subject, topic, date, time, room, targeted_to, notes)
-EXTRA_CLASSES = [
-    ("Power System Analysis - II", "Fault Analysis - Problem Solving", "2026-08-20", "5:00 - 6:30 PM", "Room 204", "backlog", "Numerical practice for symmetrical faults"),
-    ("Power Electronics - II", "DC-DC Converters - Basics Refresher", "2026-08-22", "5:00 - 6:30 PM", "Room 204", "backlog", "Concepts + solved examples"),
-    ("Control Systems", "Root Locus - Step by Step", "2026-08-27", "4:30 - 6:00 PM", "Room 204", "All", "Open to all students"),
-    ("Digital Signal Processing", "DFT & FFT - Revision", "2026-09-03", "5:00 - 6:30 PM", "DSP Lab", "backlog", "For students below 75% in DSP internals"),
-    ("Electrical Machine Design", "Transformer Design - Numerical Session", "2026-09-10", "5:00 - 6:30 PM", "Room 204", "backlog", "Practice design calculations"),
-    ("Microprocessors & Microcontrollers", "8086 Assembly - Lab Practice", "2026-09-15", "4:30 - 6:00 PM", "MPMC Lab", "backlog", "Hands-on programming session"),
-]
+    for t, rows in ROWS.items():
+        if not rows:
+            continue
+        cols = list(rows[0].keys())
+        placeholders = ",".join("?" for _ in cols)
+        collist = ",".join(cols)
+        for r in rows:
+            vals = [r.get(c) for c in cols]
+            q = "INSERT INTO %s (%s) VALUES (%s)" % (t, collist, placeholders)
+            conn.execute(q, vals)
+    conn.commit()
+    conn.close()
 
-# ============ v3: syllabus tracker (units with progress) ============
-# (subject, unit, status, covered_on)
-SYLLABUS_TRACKER = [
-    ("Power System Analysis - II", "I", "Completed", "2026-07-20"),
-    ("Power System Analysis - II", "II", "Completed", "2026-08-05"),
-    ("Power System Analysis - II", "III", "In Progress", ""),
-    ("Power System Analysis - II", "IV", "Pending", ""),
-    ("Power System Analysis - II", "V", "Pending", ""),
-    ("Power System Analysis - II", "VI", "Pending", ""),
-    ("Power Electronics - II", "I", "Completed", "2026-07-18"),
-    ("Power Electronics - II", "II", "Completed", "2026-08-02"),
-    ("Power Electronics - II", "III", "In Progress", ""),
-    ("Power Electronics - II", "IV", "Pending", ""),
-    ("Power Electronics - II", "V", "Pending", ""),
-    ("Power Electronics - II", "VI", "Pending", ""),
-    ("Electrical Machine Design", "I", "Completed", "2026-07-22"),
-    ("Electrical Machine Design", "II", "Completed", "2026-08-08"),
-    ("Electrical Machine Design", "III", "In Progress", ""),
-    ("Electrical Machine Design", "IV", "Pending", ""),
-    ("Electrical Machine Design", "V", "Pending", ""),
-    ("Electrical Machine Design", "VI", "Pending", ""),
-    ("Control Systems", "I", "Completed", "2026-07-15"),
-    ("Control Systems", "II", "Completed", "2026-08-01"),
-    ("Control Systems", "III", "In Progress", ""),
-    ("Control Systems", "IV", "Pending", ""),
-    ("Control Systems", "V", "Pending", ""),
-    ("Control Systems", "VI", "Pending", ""),
-    ("Microprocessors & Microcontrollers", "I", "Completed", "2026-07-19"),
-    ("Microprocessors & Microcontrollers", "II", "Completed", "2026-08-04"),
-    ("Microprocessors & Microcontrollers", "III", "In Progress", ""),
-    ("Microprocessors & Microcontrollers", "IV", "Pending", ""),
-    ("Microprocessors & Microcontrollers", "V", "Pending", ""),
-    ("Microprocessors & Microcontrollers", "VI", "Pending", ""),
-    ("Digital Signal Processing", "I", "Completed", "2026-07-17"),
-    ("Digital Signal Processing", "II", "Completed", "2026-07-30"),
-    ("Digital Signal Processing", "III", "In Progress", ""),
-    ("Digital Signal Processing", "IV", "Pending", ""),
-    ("Digital Signal Processing", "V", "Pending", ""),
-    ("Digital Signal Processing", "VI", "Pending", ""),
-]
+if __name__ == "__main__":
+    build_db()
+    print("[seed] built DB with %d tables" % len(ROWS))
+
+ROWS["academic_calendar"] = [{'id': 19, 'title': 'Commencement of 3-1 Classes', 'event_date': '2026-06-15', 'category': 'Academic', 'note': 'Regular class work starts'}, {'id': 20, 'title': 'I Mid-Term Examinations', 'event_date': '2026-08-18', 'category': 'Exams', 'note': 'MID-1 for all 3-1 subjects'}, {'id': 21, 'title': 'I Mid Result Declaration', 'event_date': '2026-08-30', 'category': 'Exams', 'note': ''}, {'id': 22, 'title': 'II Mid-Term Examinations', 'event_date': '2026-10-12', 'category': 'Exams', 'note': 'MID-2 for all 3-1 subjects'}, {'id': 23, 'title': 'Last Working Day', 'event_date': '2026-11-07', 'category': 'Academic', 'note': 'End of instruction'}, {'id': 24, 'title': 'Semester End (R23) Examinations', 'event_date': '2026-11-16', 'category': 'Exams', 'note': 'JNTU-GV regular exams'}, {'id': 25, 'title': 'Results Declaration', 'event_date': '2026-12-22', 'category': 'Exams', 'note': 'Expected date'}, {'id': 26, 'title': 'Supply (Backlog) Examinations', 'event_date': '2027-01-18', 'category': 'Exams', 'note': 'For failed subjects'}, {'id': 27, 'title': 'Commencement of 3-2 Classes', 'event_date': '2027-01-04', 'category': 'Academic', 'note': 'Next semester begins'}]
+
+ROWS["attendance"] = []
+ROWS["backlog"] = []
+ROWS["exam_notifications"] = [{'id': 9, 'title': 'JNTU-GV R23 Semester End Examination - Time Table Released', 'body': 'The schedule for 3-1 semester end (Regular) examinations is out. Download the timetable and verify your subjects.', 'exam_type': 'Regular', 'link': '#', 'posted_on': '2026-08-11'}, {'id': 10, 'title': 'Supply (Backlog) Examinations - January 2027', 'body': 'Applications for supply exams open from 20 Dec 2026. Apply online with the prescribed fee before the last date.', 'exam_type': 'Supply', 'link': '#', 'posted_on': '2026-08-11'}, {'id': 11, 'title': 'I Mid-Term Examinations - Hall Ticket', 'body': 'MID-1 hall tickets available from the department office. Bring your ID card to the exam hall.', 'exam_type': 'Regular', 'link': '#', 'posted_on': '2026-08-11'}, {'id': 12, 'title': 'Practical Examinations (Lab Internals)', 'body': 'Lab internals for all EEE labs scheduled from 5 Nov 2026. Record submission is compulsory.', 'exam_type': 'Regular', 'link': '#', 'posted_on': '2026-08-11'}]
+
+ROWS["extra_classes"] = [{'id': 14, 'subject': 'Power Systems-II', 'topic': 'Fault Analysis - Problem Solving', 'date': '2026-08-20', 'time': '5:00 - 6:30 PM', 'room': 'Room 204', 'targeted_to': 'backlog', 'notes': 'Numerical practice for symmetrical faults', 'posted_by': 'EEE Office'}, {'id': 15, 'subject': 'Power Electronics', 'topic': 'DC-DC Converters - Basics Refresher', 'date': '2026-08-22', 'time': '5:00 - 6:30 PM', 'room': 'Room 204', 'targeted_to': 'backlog', 'notes': 'Concepts + solved examples', 'posted_by': 'EEE Office'}, {'id': 16, 'subject': 'Signals and Systems', 'topic': 'Root Locus - Step by Step', 'date': '2026-08-27', 'time': '4:30 - 6:00 PM', 'room': 'Room 204', 'targeted_to': 'All', 'notes': 'Open to all students', 'posted_by': 'EEE Office'}, {'id': 17, 'subject': 'Digital Circuits', 'topic': 'DFT & FFT - Revision', 'date': '2026-09-03', 'time': '5:00 - 6:30 PM', 'room': 'DSP Lab', 'targeted_to': 'backlog', 'notes': 'For students below 75% in DSP internals', 'posted_by': 'EEE Office'}, {'id': 18, 'subject': 'Electrical Machine Design', 'topic': 'Transformer Design - Numerical Session', 'date': '2026-09-10', 'time': '5:00 - 6:30 PM', 'room': 'Room 204', 'targeted_to': 'backlog', 'notes': 'Practice design calculations', 'posted_by': 'EEE Office'}, {'id': 19, 'subject': 'Renewable Energy Sources', 'topic': '8086 Assembly - Lab Practice', 'date': '2026-09-15', 'time': '4:30 - 6:00 PM', 'room': 'MPMC Lab', 'targeted_to': 'backlog', 'notes': 'Hands-on programming session', 'posted_by': 'EEE Office'}]
+
+ROWS["gallery"] = []
+ROWS["job_resources"] = [{'id': 37, 'category': 'core-govt', 'title': 'SSC JE (Electrical) - Staff Selection Commission', 'description': 'Junior Engineer exam for Electrical discipline. Apply via ssc.gov.in. Includes Paper-I (Objective) + Paper-II (Conventional).', 'link': 'https://ssc.gov.in', 'posted_on': '2026-08-11'}, {'id': 38, 'category': 'core-govt', 'title': 'RRB JE / ALP - Railway Recruitment Board', 'description': 'Junior Engineer and Assistant Loco Pilot posts for Electrical. Notification from rrbcdg.gov.in.', 'link': 'https://rrbcdg.gov.in', 'posted_on': '2026-08-11'}, {'id': 39, 'category': 'core-govt', 'title': 'APSPDCL / APTRANSCO - AP Power Sector', 'description': 'Assistant Engineer / Junior Lineman recruitment by AP power utilities. Track apdcl.ap.gov.in for notifications.', 'link': 'https://www.apdcl.ap.gov.in', 'posted_on': '2026-08-11'}, {'id': 40, 'category': 'core-govt', 'title': 'DRDO / ISRO / BARC Technical Posts', 'description': 'Research and technical entry for EEE graduates through DRDO CEPTAM, ISRO Scientist/Engineer, BARC OCES.', 'link': 'https://www.drdo.gov.in', 'posted_on': '2026-08-11'}, {'id': 41, 'category': 'core-private', 'title': 'L&T, Siemens, ABB, Schneider Electric', 'description': 'Core EEE companies hiring for design, project and site engineering roles. Off-campus drives announced on company career pages.', 'link': 'https://www.siemens.com', 'posted_on': '2026-08-11'}, {'id': 42, 'category': 'core-private', 'title': 'Tata Power, Adani, NTPC (via GATE)', 'description': 'Power sector PSUs recruiting through GATE score. Electrical core roles in generation, transmission and distribution.', 'link': 'https://www.tatapower.com', 'posted_on': '2026-08-11'}, {'id': 43, 'category': 'noncore-govt', 'title': 'IBPS PO / Clerk & SBI Exams', 'description': 'Banking sector recruitment - eligibility for all graduates. Prepare with ibps.in notifications.', 'link': 'https://www.ibps.in', 'posted_on': '2026-08-11'}, {'id': 44, 'category': 'noncore-govt', 'title': 'APPSC Group - I / II / IV', 'description': 'Andhra Pradesh state government posts open to engineering graduates. Check psc.ap.gov.in.', 'link': 'https://psc.ap.gov.in', 'posted_on': '2026-08-11'}, {'id': 45, 'category': 'noncore-govt', 'title': 'Defence - AFCAT / CDS / NDA & Police (SI/Constable)', 'description': 'Defence and police recruitment for graduates. AFCAT via afcat.cdac.in.', 'link': 'https://afcat.cdac.in', 'posted_on': '2026-08-11'}, {'id': 46, 'category': 'noncore-private', 'title': 'TCS NQT, Infosys, Wipro, Cognizant', 'description': 'IT services companies hiring all branches through NQT / off-campus tests. Focus on aptitude + coding basics.', 'link': 'https://www.tcs.com', 'posted_on': '2026-08-11'}, {'id': 47, 'category': 'noncore-private', 'title': 'Amazon, Deloitte, Accenture, Tech Mahindra', 'description': 'Non-core IT and consulting roles open to EEE graduates. Off-campus drives throughout the year.', 'link': 'https://www.accenture.com', 'posted_on': '2026-08-11'}, {'id': 48, 'category': 'reasoning', 'title': 'IndiaBix - Logical Reasoning', 'description': 'Large question bank for logical and verbal reasoning with explanations.', 'link': 'https://www.indiabix.com', 'posted_on': '2026-08-11'}, {'id': 49, 'category': 'reasoning', 'title': 'Testbook - Reasoning Practice', 'description': 'Free daily reasoning quizzes and mock tests for govt exams.', 'link': 'https://testbook.com', 'posted_on': '2026-08-11'}, {'id': 50, 'category': 'aptitude', 'title': 'IndiaBix - Quantitative Aptitude', 'description': 'Aptitude questions with step-by-step solutions - core company test prep.', 'link': 'https://www.indiabix.com/aptitude/questions-and-answers/', 'posted_on': '2026-08-11'}, {'id': 51, 'category': 'aptitude', 'title': 'GeeksforGeeks - Aptitude', 'description': 'Aptitude practice and placement preparation articles.', 'link': 'https://www.geeksforgeeks.org/aptitude-gq/', 'posted_on': '2026-08-11'}, {'id': 52, 'category': 'arithmetic', 'title': 'Speed Arithmetic - Math shortcut techniques', 'description': 'Vedic math and speed calculation techniques for exams.', 'link': 'https://www.cuemath.com/learn/vedic-maths/', 'posted_on': '2026-08-11'}, {'id': 53, 'category': 'arithmetic', 'title': 'Arithmetic Practice - Career Power', 'description': 'Arithmetic questions for SSC / banking with shortcuts.', 'link': 'https://careerpower.in/arithmetic-questions.html', 'posted_on': '2026-08-11'}, {'id': 54, 'category': 'resume', 'title': 'Resume Builder - Module', 'description': 'Use the in-site Resume Builder to create your EEE resume step by step.', 'link': '/resume', 'posted_on': '2026-08-11'}]
+
+ROWS["leaves"] = [{'id': 1, 'username': '21A31A0201', 'name': 'K. Venkata Surya', 'reason': 'verify-test-leave', 'from_date': '2026-09-10', 'to_date': '2026-09-11', 'status': 'pending', 'created_at': '2026-09-05 12:14:15'}]
+
+ROWS["marks"] = [{'id': 1465, 'username': '24W61A0201', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1466, 'username': '24W61A0201', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1467, 'username': '24W61A0201', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1468, 'username': '24W61A0201', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1469, 'username': '24W61A0201', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1470, 'username': '24W61A0201', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1471, 'username': '24W61A0201', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1472, 'username': '24W61A0201', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1473, 'username': '24W61A0201', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1474, 'username': '24W61A0202', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1475, 'username': '24W61A0202', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1476, 'username': '24W61A0202', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1477, 'username': '24W61A0202', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1478, 'username': '24W61A0202', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1479, 'username': '24W61A0202', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1480, 'username': '24W61A0202', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1481, 'username': '24W61A0202', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1482, 'username': '24W61A0202', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1483, 'username': '24W61A0203', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1484, 'username': '24W61A0203', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1485, 'username': '24W61A0203', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1486, 'username': '24W61A0203', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1487, 'username': '24W61A0203', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1488, 'username': '24W61A0203', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1489, 'username': '24W61A0203', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1490, 'username': '24W61A0203', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1491, 'username': '24W61A0203', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1492, 'username': '24W61A0205', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1493, 'username': '24W61A0205', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1494, 'username': '24W61A0205', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1495, 'username': '24W61A0205', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1496, 'username': '24W61A0205', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1497, 'username': '24W61A0205', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1498, 'username': '24W61A0205', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1499, 'username': '24W61A0205', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1500, 'username': '24W61A0205', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1501, 'username': '24W61A0206', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1502, 'username': '24W61A0206', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1503, 'username': '24W61A0206', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1504, 'username': '24W61A0206', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1505, 'username': '24W61A0206', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1506, 'username': '24W61A0206', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1507, 'username': '24W61A0206', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1508, 'username': '24W61A0206', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1509, 'username': '24W61A0206', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1510, 'username': '24W61A0207', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1511, 'username': '24W61A0207', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1512, 'username': '24W61A0207', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1513, 'username': '24W61A0207', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1514, 'username': '24W61A0207', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1515, 'username': '24W61A0207', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1516, 'username': '24W61A0207', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1517, 'username': '24W61A0207', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1518, 'username': '24W61A0207', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1519, 'username': '24W61A0208', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1520, 'username': '24W61A0208', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1521, 'username': '24W61A0208', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1522, 'username': '24W61A0208', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1523, 'username': '24W61A0208', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1524, 'username': '24W61A0208', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1525, 'username': '24W61A0208', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1526, 'username': '24W61A0208', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1527, 'username': '24W61A0208', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1528, 'username': '24W61A0209', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1529, 'username': '24W61A0209', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1530, 'username': '24W61A0209', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1531, 'username': '24W61A0209', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1532, 'username': '24W61A0209', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1533, 'username': '24W61A0209', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1534, 'username': '24W61A0209', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1535, 'username': '24W61A0209', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1536, 'username': '24W61A0209', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1537, 'username': '24W61A0210', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1538, 'username': '24W61A0210', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1539, 'username': '24W61A0210', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1540, 'username': '24W61A0210', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1541, 'username': '24W61A0210', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1542, 'username': '24W61A0210', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1543, 'username': '24W61A0210', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1544, 'username': '24W61A0210', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1545, 'username': '24W61A0210', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1546, 'username': '24W61A0212', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1547, 'username': '24W61A0212', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1548, 'username': '24W61A0212', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1549, 'username': '24W61A0212', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1550, 'username': '24W61A0212', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1551, 'username': '24W61A0212', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1552, 'username': '24W61A0212', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1553, 'username': '24W61A0212', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1554, 'username': '24W61A0212', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1555, 'username': '24W61A0214', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1556, 'username': '24W61A0214', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1557, 'username': '24W61A0214', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1558, 'username': '24W61A0214', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1559, 'username': '24W61A0214', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1560, 'username': '24W61A0214', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1561, 'username': '24W61A0214', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1562, 'username': '24W61A0214', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1563, 'username': '24W61A0214', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1564, 'username': '24W61A0215', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1565, 'username': '24W61A0215', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1566, 'username': '24W61A0215', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1567, 'username': '24W61A0215', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1568, 'username': '24W61A0215', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1569, 'username': '24W61A0215', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1570, 'username': '24W61A0215', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1571, 'username': '24W61A0215', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1572, 'username': '24W61A0215', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1573, 'username': '24W61A0216', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1574, 'username': '24W61A0216', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1575, 'username': '24W61A0216', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1576, 'username': '24W61A0216', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1577, 'username': '24W61A0216', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1578, 'username': '24W61A0216', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1579, 'username': '24W61A0216', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1580, 'username': '24W61A0216', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1581, 'username': '24W61A0216', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1582, 'username': '24W61A0217', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1583, 'username': '24W61A0217', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1584, 'username': '24W61A0217', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1585, 'username': '24W61A0217', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1586, 'username': '24W61A0217', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1587, 'username': '24W61A0217', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1588, 'username': '24W61A0217', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1589, 'username': '24W61A0217', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1590, 'username': '24W61A0217', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1591, 'username': '24W61A0218', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1592, 'username': '24W61A0218', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1593, 'username': '24W61A0218', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1594, 'username': '24W61A0218', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1595, 'username': '24W61A0218', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1596, 'username': '24W61A0218', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1597, 'username': '24W61A0218', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1598, 'username': '24W61A0218', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1599, 'username': '24W61A0218', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1600, 'username': '24W61A0219', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1601, 'username': '24W61A0219', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1602, 'username': '24W61A0219', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1603, 'username': '24W61A0219', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1604, 'username': '24W61A0219', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1605, 'username': '24W61A0219', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1606, 'username': '24W61A0219', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1607, 'username': '24W61A0219', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1608, 'username': '24W61A0219', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1609, 'username': '24W61A0220', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1610, 'username': '24W61A0220', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1611, 'username': '24W61A0220', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1612, 'username': '24W61A0220', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1613, 'username': '24W61A0220', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1614, 'username': '24W61A0220', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1615, 'username': '24W61A0220', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1616, 'username': '24W61A0220', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1617, 'username': '24W61A0220', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1618, 'username': '24W61A0221', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1619, 'username': '24W61A0221', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1620, 'username': '24W61A0221', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1621, 'username': '24W61A0221', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1622, 'username': '24W61A0221', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1623, 'username': '24W61A0221', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1624, 'username': '24W61A0221', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1625, 'username': '24W61A0221', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1626, 'username': '24W61A0221', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1627, 'username': '24W61A0222', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1628, 'username': '24W61A0222', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1629, 'username': '24W61A0222', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1630, 'username': '24W61A0222', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1631, 'username': '24W61A0222', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1632, 'username': '24W61A0222', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1633, 'username': '24W61A0222', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1634, 'username': '24W61A0222', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1635, 'username': '24W61A0222', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1636, 'username': '24W61A0223', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1637, 'username': '24W61A0223', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1638, 'username': '24W61A0223', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1639, 'username': '24W61A0223', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1640, 'username': '24W61A0223', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1641, 'username': '24W61A0223', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1642, 'username': '24W61A0223', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1643, 'username': '24W61A0223', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1644, 'username': '24W61A0223', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1645, 'username': '25W65A0201', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1646, 'username': '25W65A0201', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1647, 'username': '25W65A0201', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1648, 'username': '25W65A0201', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1649, 'username': '25W65A0201', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1650, 'username': '25W65A0201', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1651, 'username': '25W65A0201', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1652, 'username': '25W65A0201', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1653, 'username': '25W65A0201', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1654, 'username': '25W65A0202', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1655, 'username': '25W65A0202', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1656, 'username': '25W65A0202', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1657, 'username': '25W65A0202', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1658, 'username': '25W65A0202', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1659, 'username': '25W65A0202', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1660, 'username': '25W65A0202', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1661, 'username': '25W65A0202', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1662, 'username': '25W65A0202', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1663, 'username': '25W65A0203', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1664, 'username': '25W65A0203', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1665, 'username': '25W65A0203', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1666, 'username': '25W65A0203', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1667, 'username': '25W65A0203', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1668, 'username': '25W65A0203', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1669, 'username': '25W65A0203', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1670, 'username': '25W65A0203', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1671, 'username': '25W65A0203', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1672, 'username': '25W65A0204', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1673, 'username': '25W65A0204', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1674, 'username': '25W65A0204', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1675, 'username': '25W65A0204', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1676, 'username': '25W65A0204', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1677, 'username': '25W65A0204', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1678, 'username': '25W65A0204', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1679, 'username': '25W65A0204', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1680, 'username': '25W65A0204', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1681, 'username': '25W65A0206', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1682, 'username': '25W65A0206', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1683, 'username': '25W65A0206', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1684, 'username': '25W65A0206', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1685, 'username': '25W65A0206', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1686, 'username': '25W65A0206', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1687, 'username': '25W65A0206', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1688, 'username': '25W65A0206', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1689, 'username': '25W65A0206', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1690, 'username': '25W65A0207', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1691, 'username': '25W65A0207', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1692, 'username': '25W65A0207', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1693, 'username': '25W65A0207', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1694, 'username': '25W65A0207', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1695, 'username': '25W65A0207', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1696, 'username': '25W65A0207', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1697, 'username': '25W65A0207', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1698, 'username': '25W65A0207', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1699, 'username': '25W65A0208', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1700, 'username': '25W65A0208', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1701, 'username': '25W65A0208', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1702, 'username': '25W65A0208', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1703, 'username': '25W65A0208', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1704, 'username': '25W65A0208', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1705, 'username': '25W65A0208', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1706, 'username': '25W65A0208', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1707, 'username': '25W65A0208', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1708, 'username': '25W65A0209', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1709, 'username': '25W65A0209', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1710, 'username': '25W65A0209', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1711, 'username': '25W65A0209', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1712, 'username': '25W65A0209', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1713, 'username': '25W65A0209', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1714, 'username': '25W65A0209', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1715, 'username': '25W65A0209', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1716, 'username': '25W65A0209', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1717, 'username': '25W65A0211', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1718, 'username': '25W65A0211', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1719, 'username': '25W65A0211', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1720, 'username': '25W65A0211', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1721, 'username': '25W65A0211', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1722, 'username': '25W65A0211', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1723, 'username': '25W65A0211', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1724, 'username': '25W65A0211', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1725, 'username': '25W65A0211', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1726, 'username': '25W65A0212', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1727, 'username': '25W65A0212', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1728, 'username': '25W65A0212', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1729, 'username': '25W65A0212', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1730, 'username': '25W65A0212', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1731, 'username': '25W65A0212', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1732, 'username': '25W65A0212', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1733, 'username': '25W65A0212', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1734, 'username': '25W65A0212', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1735, 'username': '25W65A0214', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1736, 'username': '25W65A0214', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1737, 'username': '25W65A0214', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1738, 'username': '25W65A0214', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1739, 'username': '25W65A0214', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1740, 'username': '25W65A0214', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1741, 'username': '25W65A0214', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1742, 'username': '25W65A0214', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1743, 'username': '25W65A0214', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1744, 'username': '25W65A0215', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1745, 'username': '25W65A0215', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1746, 'username': '25W65A0215', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1747, 'username': '25W65A0215', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1748, 'username': '25W65A0215', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1749, 'username': '25W65A0215', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1750, 'username': '25W65A0215', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1751, 'username': '25W65A0215', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1752, 'username': '25W65A0215', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1753, 'username': '25W65A0216', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1754, 'username': '25W65A0216', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1755, 'username': '25W65A0216', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1756, 'username': '25W65A0216', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1757, 'username': '25W65A0216', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1758, 'username': '25W65A0216', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1759, 'username': '25W65A0216', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1760, 'username': '25W65A0216', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1761, 'username': '25W65A0216', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1762, 'username': '25W65A0218', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1763, 'username': '25W65A0218', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1764, 'username': '25W65A0218', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1765, 'username': '25W65A0218', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1766, 'username': '25W65A0218', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1767, 'username': '25W65A0218', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1768, 'username': '25W65A0218', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1769, 'username': '25W65A0218', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1770, 'username': '25W65A0218', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1771, 'username': '25W65A0219', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1772, 'username': '25W65A0219', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1773, 'username': '25W65A0219', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1774, 'username': '25W65A0219', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1775, 'username': '25W65A0219', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1776, 'username': '25W65A0219', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1777, 'username': '25W65A0219', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1778, 'username': '25W65A0219', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1779, 'username': '25W65A0219', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1780, 'username': '25W65A0220', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1781, 'username': '25W65A0220', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1782, 'username': '25W65A0220', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1783, 'username': '25W65A0220', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1784, 'username': '25W65A0220', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1785, 'username': '25W65A0220', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1786, 'username': '25W65A0220', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1787, 'username': '25W65A0220', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1788, 'username': '25W65A0220', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1789, 'username': '25W65A0221', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1790, 'username': '25W65A0221', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1791, 'username': '25W65A0221', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1792, 'username': '25W65A0221', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1793, 'username': '25W65A0221', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1794, 'username': '25W65A0221', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1795, 'username': '25W65A0221', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1796, 'username': '25W65A0221', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1797, 'username': '25W65A0221', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1798, 'username': '25W65A0223', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1799, 'username': '25W65A0223', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1800, 'username': '25W65A0223', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1801, 'username': '25W65A0223', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1802, 'username': '25W65A0223', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1803, 'username': '25W65A0223', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1804, 'username': '25W65A0223', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1805, 'username': '25W65A0223', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1806, 'username': '25W65A0223', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1807, 'username': '25W65A0224', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1808, 'username': '25W65A0224', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1809, 'username': '25W65A0224', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1810, 'username': '25W65A0224', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1811, 'username': '25W65A0224', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1812, 'username': '25W65A0224', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1813, 'username': '25W65A0224', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1814, 'username': '25W65A0224', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1815, 'username': '25W65A0224', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1816, 'username': '25W65A0225', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1817, 'username': '25W65A0225', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1818, 'username': '25W65A0225', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1819, 'username': '25W65A0225', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1820, 'username': '25W65A0225', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1821, 'username': '25W65A0225', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1822, 'username': '25W65A0225', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1823, 'username': '25W65A0225', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1824, 'username': '25W65A0225', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1825, 'username': '25W65A0226', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1826, 'username': '25W65A0226', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1827, 'username': '25W65A0226', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1828, 'username': '25W65A0226', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1829, 'username': '25W65A0226', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1830, 'username': '25W65A0226', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1831, 'username': '25W65A0226', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1832, 'username': '25W65A0226', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1833, 'username': '25W65A0226', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1834, 'username': '25W65A0227', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1835, 'username': '25W65A0227', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1836, 'username': '25W65A0227', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1837, 'username': '25W65A0227', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1838, 'username': '25W65A0227', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1839, 'username': '25W65A0227', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1840, 'username': '25W65A0227', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1841, 'username': '25W65A0227', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1842, 'username': '25W65A0227', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1843, 'username': '25W65A0228', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1844, 'username': '25W65A0228', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1845, 'username': '25W65A0228', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1846, 'username': '25W65A0228', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1847, 'username': '25W65A0228', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1848, 'username': '25W65A0228', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1849, 'username': '25W65A0228', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1850, 'username': '25W65A0228', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1851, 'username': '25W65A0228', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1852, 'username': '25W65A0231', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1853, 'username': '25W65A0231', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1854, 'username': '25W65A0231', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 0, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1855, 'username': '25W65A0231', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 5, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1856, 'username': '25W65A0231', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1857, 'username': '25W65A0231', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1858, 'username': '25W65A0231', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1859, 'username': '25W65A0231', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1860, 'username': '25W65A0231', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1861, 'username': '25W65A0232', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1862, 'username': '25W65A0232', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1863, 'username': '25W65A0232', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1864, 'username': '25W65A0232', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1865, 'username': '25W65A0232', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1866, 'username': '25W65A0232', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1867, 'username': '25W65A0232', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1868, 'username': '25W65A0232', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1869, 'username': '25W65A0232', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1870, 'username': '25W65A0233', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1871, 'username': '25W65A0233', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1872, 'username': '25W65A0233', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1873, 'username': '25W65A0233', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1874, 'username': '25W65A0233', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1875, 'username': '25W65A0233', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1876, 'username': '25W65A0233', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1877, 'username': '25W65A0233', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1878, 'username': '25W65A0233', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1879, 'username': '25W65A0234', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1880, 'username': '25W65A0234', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1881, 'username': '25W65A0234', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1882, 'username': '25W65A0234', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1883, 'username': '25W65A0234', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1884, 'username': '25W65A0234', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1885, 'username': '25W65A0234', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1886, 'username': '25W65A0234', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1887, 'username': '25W65A0234', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1888, 'username': '25W65A0236', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1889, 'username': '25W65A0236', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1890, 'username': '25W65A0236', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1891, 'username': '25W65A0236', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1892, 'username': '25W65A0236', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1893, 'username': '25W65A0236', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1894, 'username': '25W65A0236', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1895, 'username': '25W65A0236', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1896, 'username': '25W65A0236', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1897, 'username': '25W65A0237', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1898, 'username': '25W65A0237', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1899, 'username': '25W65A0237', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1900, 'username': '25W65A0237', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1901, 'username': '25W65A0237', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1902, 'username': '25W65A0237', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1903, 'username': '25W65A0237', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1904, 'username': '25W65A0237', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1905, 'username': '25W65A0237', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1906, 'username': '25W65A0239', 'subject': '2-2 | R2322011', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1907, 'username': '25W65A0239', 'subject': '2-2 | R2322019', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1908, 'username': '25W65A0239', 'subject': '2-2 | R2322021', 'exam': 'MID1', 'marks': 6, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1909, 'username': '25W65A0239', 'subject': '2-2 | R2322022', 'exam': 'MID1', 'marks': 7, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1910, 'username': '25W65A0239', 'subject': '2-2 | R2322023', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1911, 'username': '25W65A0239', 'subject': '2-2 | R2322024', 'exam': 'MID1', 'marks': 8, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1912, 'username': '25W65A0239', 'subject': '2-2 | R2322025', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1913, 'username': '25W65A0239', 'subject': '2-2 | R2322026', 'exam': 'MID1', 'marks': 9, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1914, 'username': '25W65A0239', 'subject': '2-2 | R2322027', 'exam': 'MID1', 'marks': 10, 'max_marks': 10, 'updated_at': '2026-08-24 16:44'}, {'id': 1915, 'username': '24W61A0201', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 758, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1916, 'username': '24W61A0202', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 811, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1917, 'username': '24W61A0203', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 760, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1918, 'username': '24W61A0205', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 781, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1919, 'username': '24W61A0206', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 775, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1920, 'username': '24W61A0207', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 798, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1921, 'username': '24W61A0208', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 838, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1922, 'username': '24W61A0209', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 775, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1923, 'username': '24W61A0210', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 795, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1924, 'username': '24W61A0212', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 862, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1925, 'username': '24W61A0214', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 829, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1926, 'username': '24W61A0215', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 894, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1927, 'username': '24W61A0216', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 757, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1928, 'username': '24W61A0217', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 714, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1929, 'username': '24W61A0218', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 763, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1930, 'username': '24W61A0219', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 727, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1931, 'username': '24W61A0220', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 753, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1932, 'username': '24W61A0221', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 763, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1933, 'username': '24W61A0222', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 764, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1934, 'username': '24W61A0223', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 833, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1935, 'username': '25W65A0201', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 781, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1936, 'username': '25W65A0202', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 805, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1937, 'username': '25W65A0203', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 778, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1938, 'username': '25W65A0204', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 738, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1939, 'username': '25W65A0206', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 745, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1940, 'username': '25W65A0207', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 833, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1941, 'username': '25W65A0208', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 812, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1942, 'username': '25W65A0209', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 900, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1943, 'username': '25W65A0211', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 750, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1944, 'username': '25W65A0212', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 750, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1945, 'username': '25W65A0214', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 798, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1946, 'username': '25W65A0215', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 776, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1947, 'username': '25W65A0216', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 790, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1948, 'username': '25W65A0218', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 798, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1949, 'username': '25W65A0219', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 755, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1950, 'username': '25W65A0220', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 833, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1951, 'username': '25W65A0221', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 752, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1952, 'username': '25W65A0223', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 770, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1953, 'username': '25W65A0224', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 795, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1954, 'username': '25W65A0225', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 775, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1955, 'username': '25W65A0226', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 814, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1956, 'username': '25W65A0227', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 802, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1957, 'username': '25W65A0228', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 817, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1958, 'username': '25W65A0231', 'subject': '2-2 | RESULT (FAIL)', 'exam': 'MID1', 'marks': 789, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1959, 'username': '25W65A0232', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 862, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1960, 'username': '25W65A0233', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 805, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1961, 'username': '25W65A0234', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 790, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1962, 'username': '25W65A0236', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 805, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1963, 'username': '25W65A0237', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 750, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}, {'id': 1964, 'username': '25W65A0239', 'subject': '2-2 | RESULT (PASS)', 'exam': 'MID1', 'marks': 790, 'max_marks': 1000, 'updated_at': '2026-08-24 16:44'}]
+
+ROWS["mentorship"] = [{'id': 13, 'username': '21A31A0201', 'mentor': 'Dr. G.T. Chandra Sekhar', 'last_meeting': '2026-08-05', 'next_meeting': '2026-09-02', 'notes': 'Academic progress on track. Continue consistent performance.', 'updated_at': '2026-08-11 16:50:21'}, {'id': 14, 'username': '21A31A0202', 'mentor': 'Dr. G.T. Chandra Sekhar', 'last_meeting': '2026-08-05', 'next_meeting': '2026-09-02', 'notes': 'Improve attendance in DSP. Practice numerical problems.', 'updated_at': '2026-08-11 16:50:21'}, {'id': 15, 'username': '21A31A0203', 'mentor': 'Dr. Rajselvan C', 'last_meeting': '2026-08-04', 'next_meeting': '2026-09-01', 'notes': 'Focus on clearing backlog subjects. Extra classes advised.', 'updated_at': '2026-08-11 16:50:21'}, {'id': 16, 'username': '21A31A0204', 'mentor': 'Dr. Kanthi Andhavarapu', 'last_meeting': '2026-08-06', 'next_meeting': '2026-09-03', 'notes': 'Good performance. Consider taking up technical paper presentation.', 'updated_at': '2026-08-11 16:50:21'}, {'id': 17, 'username': '21A31A0205', 'mentor': 'Dr. Rajselvan C', 'last_meeting': '2026-08-04', 'next_meeting': '2026-09-01', 'notes': 'Backlog - attend extra classes for Electrical Machines.', 'updated_at': '2026-08-11 16:50:21'}, {'id': 18, 'username': '21A31A0206', 'mentor': 'Dr. Kanthi Andhavarapu', 'last_meeting': '2026-08-06', 'next_meeting': '2026-09-03', 'notes': 'Multiple backlogs - weekly meeting with mentor scheduled.', 'updated_at': '2026-08-11 16:50:21'}]
+
+ROWS["notices"] = [{'id': 21, 'title': 'Mid-I Examinations Schedule Released', 'body': 'Mid Semester-I examinations for 3-1 will be held from 18 Aug to 25 Aug 2026. Attend without fail; bring your JNTU-GV hall ticket and ID card.', 'category': 'Exams', 'posted_on': '2026-08-12', 'author': 'EEE Office'}, {'id': 22, 'title': 'Industrial Visit - Power Grid Substation, Ravada', 'body': 'IV for III EEE on 29 Aug 2026, 9:00 AM. Bus departs from college main gate. Submit ₹200 to the class representative by 25 Aug. Permission letters from parents required.', 'category': 'Industrial Visit', 'posted_on': '2026-08-10', 'author': 'EEE Office'}, {'id': 23, 'title': 'Workshop: MATLAB & Simulink for Power Systems', 'body': 'One-day hands-on workshop on 5 Sep 2026, EEE Seminar Hall, 10 AM. Conducted by industry experts. Certificate provided. Limited to 60 seats - register at dept office.', 'category': 'Workshop', 'posted_on': '2026-08-08', 'author': 'EEE Office'}, {'id': 24, 'title': 'Attendance below 65% - Warning', 'body': 'Students with attendance below 65% must meet the class advisor before 15 Aug. As per JNTU-GV norms, <75% attendance bars you from semester exams.', 'category': 'Attendance', 'posted_on': '2026-08-05', 'author': 'EEE Office'}, {'id': 25, 'title': 'M.Tech Power Electronics - Admissions Open', 'body': 'M.Tech Power Electronics 2026-27 admissions open. Intake 9 (Category A) + 3 (Category B). Contact the EEE department office for application details.', 'category': 'Admissions', 'posted_on': '2026-07-28', 'author': 'EEE Office'}]
+
+ROWS["pyq"] = [{'id': 41, 'subject': 'Power Systems-II', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 42, 'subject': 'Power Systems-II', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 43, 'subject': 'Power Systems-II', 'year': '2024', 'exam': 'Supply', 'download': '#'}, {'id': 44, 'subject': 'Power Systems-II', 'year': '2023', 'exam': 'Regular', 'download': '#'}, {'id': 45, 'subject': 'Power Electronics', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 46, 'subject': 'Power Electronics', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 47, 'subject': 'Power Electronics', 'year': '2023', 'exam': 'Supply', 'download': '#'}, {'id': 48, 'subject': 'Electrical Machine Design', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 49, 'subject': 'Electrical Machine Design', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 50, 'subject': 'Electrical Machine Design', 'year': '2023', 'exam': 'Regular', 'download': '#'}, {'id': 51, 'subject': 'Signals and Systems', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 52, 'subject': 'Signals and Systems', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 53, 'subject': 'Signals and Systems', 'year': '2024', 'exam': 'Supply', 'download': '#'}, {'id': 54, 'subject': 'Signals and Systems', 'year': '2023', 'exam': 'Regular', 'download': '#'}, {'id': 55, 'subject': 'Renewable Energy Sources', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 56, 'subject': 'Renewable Energy Sources', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 57, 'subject': 'Renewable Energy Sources', 'year': '2023', 'exam': 'Supply', 'download': '#'}, {'id': 58, 'subject': 'Digital Circuits', 'year': '2025', 'exam': 'Regular', 'download': '#'}, {'id': 59, 'subject': 'Digital Circuits', 'year': '2024', 'exam': 'Regular', 'download': '#'}, {'id': 60, 'subject': 'Digital Circuits', 'year': '2023', 'exam': 'Regular', 'download': '#'}]
+
+ROWS["resume_builder"] = [{'id': 1, 'username': '21A31A0201', 'data': '{"fullname": "K. Venkata Surya", "email": "surya@mail.com", "phone": "9876543210", "objective": "Test objective", "education": ["B.Tech EEE"], "skills": ["MATLAB", "Python"], "projects": [], "certifications": [], "achievements": []}', 'updated_at': '2026-08-11 12:04:08'}]
+
+ROWS["solved_papers"] = [{'id': 21, 'subject': 'Power Systems-II', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 22, 'subject': 'Power Systems-II', 'year': '2023', 'exam': 'Regular', 'link': '#'}, {'id': 23, 'subject': 'Power Electronics', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 24, 'subject': 'Power Electronics', 'year': '2023', 'exam': 'Regular', 'link': '#'}, {'id': 25, 'subject': 'Electrical Machine Design', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 26, 'subject': 'Signals and Systems', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 27, 'subject': 'Signals and Systems', 'year': '2023', 'exam': 'Regular', 'link': '#'}, {'id': 28, 'subject': 'Renewable Energy Sources', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 29, 'subject': 'Digital Circuits', 'year': '2024', 'exam': 'Regular', 'link': '#'}, {'id': 30, 'subject': 'Digital Circuits', 'year': '2023', 'exam': 'Regular', 'link': '#'}]
+
+ROWS["study_materials"] = [{'id': 41, 'subject': 'Power Systems-II', 'title': 'Unit I - Per Unit Analysis & Symmetrical Components (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 42, 'subject': 'Power Systems-II', 'title': 'Fault Analysis - Complete Handwritten Notes (PDF)', 'kind': 'pdf', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 43, 'subject': 'Power Systems-II', 'title': 'Gauss-Seidel vs Newton-Raphson - Comparison PPT', 'kind': 'ppt', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 44, 'subject': 'Power Systems-II', 'title': 'Stability Analysis - Video Lectures (Playlist)', 'kind': 'video', 'link': 'https://www.youtube.com/results?search_query=power+system+stability+swing+equation', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 45, 'subject': 'Power Electronics', 'title': 'DC-DC Converters - Buck, Boost, Buck-Boost (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 46, 'subject': 'Power Electronics', 'title': 'Inverters & PWM Techniques - Unit III Notes', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 47, 'subject': 'Power Electronics', 'title': 'SMPS & UPS - Reference Material (PDF)', 'kind': 'pdf', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 48, 'subject': 'Power Electronics', 'title': 'Choppers & Commutation - Video Lectures', 'kind': 'video', 'link': 'https://www.youtube.com/results?search_query=choppers+power+electronics', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 49, 'subject': 'Electrical Machine Design', 'title': 'Design of Transformers - Core & Winding (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 50, 'subject': 'Electrical Machine Design', 'title': 'Design of DC Machines - Output Equation Notes', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 51, 'subject': 'Electrical Machine Design', 'title': 'Machine Design Data Book (PDF)', 'kind': 'pdf', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 52, 'subject': 'Signals and Systems', 'title': 'Unit I - Transfer Function & Block Diagrams (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 53, 'subject': 'Signals and Systems', 'title': 'Root Locus Technique - Step-by-step (PDF)', 'kind': 'pdf', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 54, 'subject': 'Signals and Systems', 'title': 'Bode & Nyquist Plots - Video Lectures', 'kind': 'video', 'link': 'https://www.youtube.com/results?search_query=bode+plot+control+systems', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 55, 'subject': 'Renewable Energy Sources', 'title': '8086 Architecture & Instruction Set (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 56, 'subject': 'Renewable Energy Sources', 'title': '8051 Programming Examples (PDF)', 'kind': 'pdf', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 57, 'subject': 'Renewable Energy Sources', 'title': 'Peripheral Interfacing - 8255, 8259 (PPT)', 'kind': 'ppt', 'link': '#', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 58, 'subject': 'Digital Circuits', 'title': 'Z-Transform & Difference Equations (Notes)', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 59, 'subject': 'Digital Circuits', 'title': 'DFT & FFT Algorithms - Notes', 'kind': 'notes', 'link': '', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}, {'id': 60, 'subject': 'Digital Circuits', 'title': 'IIR / FIR Filter Design - Video Lectures', 'kind': 'video', 'link': 'https://www.youtube.com/results?search_query=IIR+FIR+filter+design+dsp', 'uploaded_by': 'EEE Dept', 'posted_on': '2026-08-11'}]
+
+ROWS["syllabus"] = [{'id': 75, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Linear Algebra & Calculus', 'code': 'R23BS01', 'credits': 3, 'units': '[]'}, {'id': 76, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Chemistry', 'code': 'R23BS04T', 'credits': 3, 'units': '[]'}, {'id': 77, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Introduction to Programming', 'code': 'R23ES07T', 'credits': 3, 'units': '[]'}, {'id': 78, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Engineering Graphics', 'code': 'R23ES03', 'credits': 3, 'units': '[]'}, {'id': 79, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Basic Electrical & Electronics Engineering', 'code': 'R23ES04', 'credits': 3, 'units': '[]'}, {'id': 80, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Chemistry Lab', 'code': 'R23BS04P', 'credits': 1, 'units': '[]'}, {'id': 81, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Computer Programming Lab', 'code': 'R23ES07P', 'credits': 1.5, 'units': '[]'}, {'id': 82, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'Electrical & Electronics Engineering Workshop', 'code': 'R23ES05', 'credits': 1.5, 'units': '[]'}, {'id': 83, 'program': 'B.Tech', 'year_sem': 'I-I', 'subject': 'NSS/NCC/Scouts & Guides/Community Service', 'code': 'R23MC02', 'credits': 0.5, 'units': '[]'}, {'id': 84, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Differential Equations and Vector Calculus', 'code': 'R23BS02', 'credits': 3, 'units': '[]'}, {'id': 85, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Engineering Physics', 'code': 'R23BS03T', 'credits': 3, 'units': '[]'}, {'id': 86, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Communicative English', 'code': 'R23HS01T', 'credits': 2, 'units': '[]'}, {'id': 87, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Basic Civil & Mechanical Engineering', 'code': 'R23ES01', 'credits': 3, 'units': '[]'}, {'id': 88, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Electrical Circuit Analysis-I', 'code': 'R23PC01T', 'credits': 3, 'units': '[]'}, {'id': 89, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Communicative English Lab', 'code': 'R23HS01P', 'credits': 1, 'units': '[]'}, {'id': 90, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Engineering Physics Lab', 'code': 'R23BS03P', 'credits': 1, 'units': '[]'}, {'id': 91, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'IT Workshop', 'code': 'R23ES06', 'credits': 1, 'units': '[]'}, {'id': 92, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Engineering Workshop', 'code': 'R23ES02', 'credits': 1.5, 'units': '[]'}, {'id': 93, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Electrical Circuits Lab', 'code': 'R23PC01P', 'credits': 1.5, 'units': '[]'}, {'id': 94, 'program': 'B.Tech', 'year_sem': 'I-II', 'subject': 'Health and Wellness, Yoga and Sports', 'code': 'R23MC01', 'credits': 0.5, 'units': '[]'}]
+
+ROWS["syllabus_tracker"] = [{'id': 73, 'subject': 'Power Systems-II', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-20', 'updated_by': 'EEE Office'}, {'id': 74, 'subject': 'Power Systems-II', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-08-05', 'updated_by': 'EEE Office'}, {'id': 75, 'subject': 'Power Systems-II', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 76, 'subject': 'Power Systems-II', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 77, 'subject': 'Power Systems-II', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 78, 'subject': 'Power Systems-II', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 79, 'subject': 'Power Electronics', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-18', 'updated_by': 'EEE Office'}, {'id': 80, 'subject': 'Power Electronics', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-08-02', 'updated_by': 'EEE Office'}, {'id': 81, 'subject': 'Power Electronics', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 82, 'subject': 'Power Electronics', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 83, 'subject': 'Power Electronics', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 84, 'subject': 'Power Electronics', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 85, 'subject': 'Electrical Machine Design', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-22', 'updated_by': 'EEE Office'}, {'id': 86, 'subject': 'Electrical Machine Design', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-08-08', 'updated_by': 'EEE Office'}, {'id': 87, 'subject': 'Electrical Machine Design', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 88, 'subject': 'Electrical Machine Design', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 89, 'subject': 'Electrical Machine Design', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 90, 'subject': 'Electrical Machine Design', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 91, 'subject': 'Signals and Systems', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-15', 'updated_by': 'EEE Office'}, {'id': 92, 'subject': 'Signals and Systems', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-08-01', 'updated_by': 'EEE Office'}, {'id': 93, 'subject': 'Signals and Systems', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 94, 'subject': 'Signals and Systems', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 95, 'subject': 'Signals and Systems', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 96, 'subject': 'Signals and Systems', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 97, 'subject': 'Renewable Energy Sources', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-19', 'updated_by': 'EEE Office'}, {'id': 98, 'subject': 'Renewable Energy Sources', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-08-04', 'updated_by': 'EEE Office'}, {'id': 99, 'subject': 'Renewable Energy Sources', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 100, 'subject': 'Renewable Energy Sources', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 101, 'subject': 'Renewable Energy Sources', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 102, 'subject': 'Renewable Energy Sources', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 103, 'subject': 'Digital Circuits', 'unit': 'I', 'status': 'Completed', 'covered_on': '2026-07-17', 'updated_by': 'EEE Office'}, {'id': 104, 'subject': 'Digital Circuits', 'unit': 'II', 'status': 'Completed', 'covered_on': '2026-07-30', 'updated_by': 'EEE Office'}, {'id': 105, 'subject': 'Digital Circuits', 'unit': 'III', 'status': 'In Progress', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 106, 'subject': 'Digital Circuits', 'unit': 'IV', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 107, 'subject': 'Digital Circuits', 'unit': 'V', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}, {'id': 108, 'subject': 'Digital Circuits', 'unit': 'VI', 'status': 'Pending', 'covered_on': '', 'updated_by': 'EEE Office'}]
+
+ROWS["timetable"] = [{'id': 211, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 1, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 212, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 2, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 213, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 3, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 214, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 4, 'subject': 'Renewable Energy Sources', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 205'}, {'id': 215, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 5, 'subject': 'Power Electronics Lab', 'faculty': 'Praveen', 'room': 'Lab 1'}, {'id': 216, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 6, 'subject': 'Power Electronics Lab', 'faculty': 'Praveen', 'room': 'Lab 1'}, {'id': 217, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 1, 'period': 7, 'subject': 'Soft Skills', 'faculty': 'Bhanuchandra', 'room': 'Room 205'}, {'id': 218, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 1, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 219, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 2, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 220, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 3, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 221, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 4, 'subject': 'Signals and Systems', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 222, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 5, 'subject': 'Analog and Digital Circuits Lab', 'faculty': 'Bhanuchandra', 'room': 'Lab 2'}, {'id': 223, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 6, 'subject': 'Analog and Digital Circuits Lab', 'faculty': 'Bhanuchandra', 'room': 'Lab 2'}, {'id': 224, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 2, 'period': 7, 'subject': 'Tinkering Lab', 'faculty': 'Praveen', 'room': 'Lab 3'}, {'id': 225, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 1, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 226, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 2, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 227, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 3, 'subject': 'Renewable Energy Sources', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 205'}, {'id': 228, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 4, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 229, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 5, 'subject': 'Power Electronics Lab', 'faculty': 'Praveen', 'room': 'Lab 1'}, {'id': 230, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 6, 'subject': 'Power Electronics Lab', 'faculty': 'Praveen', 'room': 'Lab 1'}, {'id': 231, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 3, 'period': 7, 'subject': 'Tinkering Lab', 'faculty': 'Praveen', 'room': 'Lab 3'}, {'id': 232, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 1, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 233, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 2, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 234, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 3, 'subject': 'Signals and Systems', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 235, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 4, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 236, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 5, 'subject': 'Analog and Digital Circuits Lab', 'faculty': 'Bhanuchandra', 'room': 'Lab 2'}, {'id': 237, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 6, 'subject': 'Analog and Digital Circuits Lab', 'faculty': 'Bhanuchandra', 'room': 'Lab 2'}, {'id': 238, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 4, 'period': 7, 'subject': 'Soft Skills', 'faculty': 'Bhanuchandra', 'room': 'Room 205'}, {'id': 239, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 1, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 240, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 2, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 241, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 3, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 242, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 4, 'subject': 'Renewable Energy Sources', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 205'}, {'id': 243, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 5, 'subject': 'Signals and Systems', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 244, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 6, 'subject': 'Soft Skills', 'faculty': 'Bhanuchandra', 'room': 'Room 205'}, {'id': 245, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 5, 'period': 7, 'subject': 'Tinkering Lab', 'faculty': 'Praveen', 'room': 'Lab 3'}, {'id': 246, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 1, 'subject': 'Renewable Energy Sources', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 205'}, {'id': 247, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 2, 'subject': 'Power Electronics', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 248, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 3, 'subject': 'Power Systems-II', 'faculty': 'Praveen', 'room': 'Room 204'}, {'id': 249, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 4, 'subject': 'Digital Circuits', 'faculty': 'Bhanuchandra', 'room': 'Room 204'}, {'id': 250, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 5, 'subject': 'Signals and Systems', 'faculty': 'Dr. G.T. Chandra Sekhar', 'room': 'Room 204'}, {'id': 251, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 6, 'subject': 'Soft Skills', 'faculty': 'Bhanuchandra', 'room': 'Room 205'}, {'id': 252, 'program': 'B.Tech', 'year_sem': '3-1', 'day': 6, 'period': 7, 'subject': 'Tinkering Lab', 'faculty': 'Praveen', 'room': 'Lab 3'}]
+
+ROWS["users"] = [{'id': 39, 'username': '24W61A0201', 'password_hash': 'scrypt:32768:8:1$N5QiwF40BF1D6JxI$2676a63abb1297f4338fa169a3ba7fb29fe11782c54262b28e753930c563218cb0f53a8f42335167fbad694d7d098029a4370c4242a96677ecb07f41d329373d', 'role': 'student', 'name': 'BATNA DHANUNJAYA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.58, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 40, 'username': '24W61A0202', 'password_hash': 'scrypt:32768:8:1$txZanmNIntvGGS3u$ccfb3a12b0c464c21f939b52baa4d14410e72c8e8fa987d9c216e97368fce1bc76f5e02e9d95bc9a0efadd32e9cea18ce540ae01b2d349fc3f782d5b23c0eeeb', 'role': 'student', 'name': 'BHUMULA LOKESH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.11, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 41, 'username': '24W61A0203', 'password_hash': 'scrypt:32768:8:1$HXbp1hqbQHiNXGTr$fcc438987fef9b75f795b0e1fa26776dced4da97cf0fcb8e3d345ae8b11c46bffaa663753a36dd8ff1d0049835c5201c29a01aa11b51e260a7dc8281a3f95057', 'role': 'student', 'name': 'DUVVU SAI PRASAD', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.6, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 42, 'username': '24W61A0205', 'password_hash': 'scrypt:32768:8:1$H5pY47uzLIfBsikT$1b036a7fd7722f11319fbe2572f81539cacec8852914c998e02fb9eae4f602c6a5c100c3d8de91ff03ba4d8c48718451cf63080c76023e3018cb83c0d00a9326', 'role': 'student', 'name': 'GADU VINAY KUMAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.81, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 43, 'username': '24W61A0206', 'password_hash': 'scrypt:32768:8:1$6k3I37OWekHvy3aZ$5eb54cb109a6d51bdd078274a475ef30002f2ee236e41e12433a6a5c112102a49733896e69ea174e90f77c061d95991cccfa95536e6f14aeba3a37a7a3c65f55', 'role': 'student', 'name': 'GONDU BHASKARARAO', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.75, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 44, 'username': '24W61A0207', 'password_hash': 'scrypt:32768:8:1$73v0tRtV6BqWYCgd$ee893b2878f4c1faa7a85bd5862cc859c4a06974d29c224eb168afe2699d902d5303f9786872d170bffd49677c7fce3542d0ae5b9aa1e0c1efed47dbe7141da9', 'role': 'student', 'name': 'GUDLA KUSUMA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.98, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 45, 'username': '24W61A0208', 'password_hash': 'scrypt:32768:8:1$8jo8WsUBQOM9TMqy$49db1ab96c68da41e969fe53c3ed54a800e9c8559070f3d4e6e5def2059e97fc69711e04b15c23b5755a46808a824676253434e4445ca2acdb50845cbca0ba6a', 'role': 'student', 'name': 'GUNDA BHAGYA LAKSHMI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.38, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 46, 'username': '24W61A0209', 'password_hash': 'scrypt:32768:8:1$cYjJqrbbYSZAGIbm$cd128662b9488462095261f341a6e75701bb690c155f3543a2a5dfde294dfd86dddb92b338dce95b30069ec0bf5822ff4ec2fe1a4f454ab74cb81eb1b7fcb592', 'role': 'student', 'name': 'KANDI NANI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.75, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 47, 'username': '24W61A0210', 'password_hash': 'scrypt:32768:8:1$eVlhG3vboICqdHsA$bb6a2c77848c4f0b96605752ac6b77986334602718aeb0ef6a19ac46a63a76466d9ad3f2231c9aa73f6b5f6343b15dcee288818429573735e1f18ba4c496d12b', 'role': 'student', 'name': 'ODI SUJANA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.95, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 48, 'username': '24W61A0212', 'password_hash': 'scrypt:32768:8:1$ptl1ZrjfGx4XEdf5$c2b30c35a59cd7c5f4a602dfa91a1c01c6ed09567625cb2e76fdc08b48d8c53b6cbe69d867eaa7b51c43ebb0d59ef9e1291687d1b77403404736bf6f187d15b5', 'role': 'student', 'name': 'LUKALAPU PAVAN', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.62, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 49, 'username': '24W61A0214', 'password_hash': 'scrypt:32768:8:1$iC9sa5iqwJlZWmOs$36f762f362babbba9f4cc256007334283c76224f32fcac201baafa07adf1b7e194d8b1d1a14b90b3ae22a80f8de996866312769ec71eee5b37bd5ad8bc5a15ad', 'role': 'student', 'name': 'MEDARAMETLA JYOTHIRMAL', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.29, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 50, 'username': '24W61A0215', 'password_hash': 'scrypt:32768:8:1$v5iUyruFnaVBCVNV$80d40d8c87735196ef13b135572ba5a74311dafc8e7a199cf80d83ee806b321aff4edd5a2c1356d91c6eacfd08af49214484055b554665886a6faf46c1d54e90', 'role': 'student', 'name': 'NADIPALLI SRAVANTHI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.94, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 51, 'username': '24W61A0216', 'password_hash': 'scrypt:32768:8:1$oTzfS82vOhu3OTCV$d4b54a86a9174bfe46bbb3373379f8bbb8ccbe4d26f877a04cbdb0d86b60df20ea6cdda4203728bd789321ad1cee8e6861bc19190fb4f33d94b5919cfc73b85f', 'role': 'student', 'name': 'NUTTU DURGAPRASAD', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.57, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 52, 'username': '24W61A0217', 'password_hash': 'scrypt:32768:8:1$wgYMQGNSH8HjSUPO$4b7d742cd6e363fc33ff7e46adcb289883cd8fbde6dff38c676989643abaa02771608acda9e906e4d18b711828b1599084546a2c022a71e8715509daa2227f54', 'role': 'student', 'name': 'PODILAPU MANIKANTA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.14, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 53, 'username': '24W61A0218', 'password_hash': 'scrypt:32768:8:1$da6Ext5QFLLfxCJy$2021b03bf268881f85adec6971f0f362f96dc1e054bff6a87cab0057e924913e94d0bd2a1646e6b1dcdf60b5ad9655d4aabedad4a344a05e9859ea3b16ecc185', 'role': 'student', 'name': 'PONNADA BALU', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.63, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 54, 'username': '24W61A0219', 'password_hash': 'scrypt:32768:8:1$qP1pLGZUU9kRIfV8$89071cc4cbe27a4da4faa34defdeb6e22d0fa7fe52f53acd15871e513d611d382c71456f096fb3c50a7c88d2e9c1f21a21e82a9616bb77a050f7c90e3e6e2cc2', 'role': 'student', 'name': 'POTHANAPALLI VISHAL', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.27, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 55, 'username': '24W61A0220', 'password_hash': 'scrypt:32768:8:1$NezeymT2og16q2pZ$4af7f2612b5d2443793a1e64397b92c3023e027592da78dbbf8bc7534ef7045ccbc057efe889690d37de3c40a310d4780073769cee20d6f440e24281939df2df', 'role': 'student', 'name': 'RAVADA CHAKRAVARTHI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.53, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 56, 'username': '24W61A0221', 'password_hash': 'scrypt:32768:8:1$0gRMOE0Vxm6uZBnq$5f628f63a1ab1231d5b82552cb6c7264f544c8c462aa56aa69568fe5455fe87667f5eb615569c1a58eddd88314ce98e8aa3e01e7f36140a5160236e38235dc3f', 'role': 'student', 'name': 'REDDI DHILLESWARARAO', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.63, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 57, 'username': '24W61A0222', 'password_hash': 'scrypt:32768:8:1$y4rfKws4NpnHUlUt$4ab3ac39f6a6d4e88132598340af0c5f9864e20fe3fbbd3133ad7527461ab20c63fc0185517d1f298aca59c9784df33b37efa19caa83fdb45910ec94b189c7cc', 'role': 'student', 'name': 'RUPPA DURGABHAVANI SHANKAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.64, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 58, 'username': '24W61A0223', 'password_hash': 'scrypt:32768:8:1$roIFAIwLQ1z8Cbv1$afd438decbec6d3ba1e67a87f6e0fa2d872c987e01b329db752194921c6499587938387e151604fb6914c2a51cb148f50cdc52abcb608366c15136e57caaf7a2', 'role': 'student', 'name': 'URLAPU SHARMILA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.33, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 59, 'username': '25W65A0201', 'password_hash': 'scrypt:32768:8:1$mwb2fsVa2JolUAhn$c27ca49ebc13e0e22e666cd1e52e606a222cdd9426e6968eb12a4c5f81a4a9d4bd560a8de374675f509a5b1fc17d159f229db033acfaedfc617d291c483f9c51', 'role': 'student', 'name': 'BAGU SIVA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.81, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 60, 'username': '25W65A0202', 'password_hash': 'scrypt:32768:8:1$gf8KU3vZIpdm02dj$322c9b07509451f0e54c937ea4110f745717b1d3cc99afdfaa798f9aa67d7f035c6db4c52fe4ea328c7925496087f3983c11be368e4425133726dcceeb24968c', 'role': 'student', 'name': 'BALIVADA CHAITANYA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.05, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 61, 'username': '25W65A0203', 'password_hash': 'scrypt:32768:8:1$WK0TsNjq54CFju4f$23998a375760e7163b22dba760f923fdaab0f23a125a05fb2cff02b0e6687986f195f04bbe95116e283aa5a8ffa3c41097ea009b4339c8fad876f6c7f72e97a0', 'role': 'student', 'name': 'BAYRI HEMASUNDHARUDU', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.78, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 62, 'username': '25W65A0204', 'password_hash': 'scrypt:32768:8:1$nRi8j9SiEPIwm4oK$8135838f0625a3866211606c9e14832b4507c8cc9e37e070dcb296fd9c60bbf3a9bfc745b30719c9591dd11cbd3ee902029dc10eec3b5f8b8d7bbf998908b371', 'role': 'student', 'name': 'BANTUPALLI RAJASEKHAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.38, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 63, 'username': '25W65A0206', 'password_hash': 'scrypt:32768:8:1$jJnQ4GlosXhV89be$6c6c590eee260d9b916de88bfef7679a2e0f1af7d3b1a5fc1e6f3daacb62b99d8500b35857f8428451d1220742a3b824d656cc20ca6c0e1108c63edcc08a6343', 'role': 'student', 'name': 'CHETTU SURESH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.45, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 64, 'username': '25W65A0207', 'password_hash': 'scrypt:32768:8:1$OI2tWPY5UBk4FlxD$ad40304d0fb25244de849b21f6a6fd1908a7549b7077ddb55eac41690608f61dec392a0635885ffd2f9f74965b49ef22d5f827e31bca13e3fa2eb9127b73ae27', 'role': 'student', 'name': 'DAKOJU SAI DEEPAK', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.33, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 65, 'username': '25W65A0208', 'password_hash': 'scrypt:32768:8:1$cOPQTgzMqlOZ9Swl$bbe36565a69af4fac98fb9986ed1c4f809cc03c7ee0796eb69e8322c8904c02b19837d7b4c20d9f48c25535fda01ca3f1fd654b48cb8e3320b0057a37b159f38', 'role': 'student', 'name': 'DUKKA DURGAPRASAD', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.12, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 66, 'username': '25W65A0209', 'password_hash': 'scrypt:32768:8:1$rilf108ed3wpvTYd$f0d7f18ac73677c2f89d822884f7d17cdd23f381ad48c41c8666add86604e0d0e04e693def2c4a5cf69ca8cd048c14daf4dbcda9d169061f8cf5a9d3f75880ba', 'role': 'student', 'name': 'DUMPA AMRUTHASRI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 9.0, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 67, 'username': '25W65A0211', 'password_hash': 'scrypt:32768:8:1$VNiPaqAQb51daCFO$f3a0d32c1bb51c409295c50eb2a23ad0fd926cf556dcf2ffeb60112f39b7225068b11f36a3f0e2af479249a41a71f4891ce0c0960f86fd9f8bf474048518e1a1', 'role': 'student', 'name': 'GEDELA HEMANTH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.5, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 68, 'username': '25W65A0212', 'password_hash': 'scrypt:32768:8:1$Tlv3Q9HAMDOyuWFr$445ac72ab1392da2d13093f67da9f63272c91c2d73ee4555e080d5679681c116cfe4785991ebbcd8916b97d34740512351586da05c45df403464bb95a3aa04bd', 'role': 'student', 'name': 'GORU SANJAY KUMAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.5, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 69, 'username': '25W65A0214', 'password_hash': 'scrypt:32768:8:1$NHbuvPZudkYpndMV$d99db22a172ceb8f51681879e954f04c3964e19f23b07837faf9c7df162204453f27d988a141ce683b5a293a5ab63793e8e4f3d72e2c8b3f82a79df88fd03a47', 'role': 'student', 'name': 'KILLI SAIKUMAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.98, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 70, 'username': '25W65A0215', 'password_hash': 'scrypt:32768:8:1$uMlEDaNmacJcQAIa$eac53417b91bcb58b032bfc6804fa0576080aef85c195db221053ceacef1df03d72e9b0a67a3cadd099c92231b4ff2594822cd2c0bb58ce4b0540b490d21ebbb', 'role': 'student', 'name': 'KIMIDI KALA VENKATA RAO', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.76, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 71, 'username': '25W65A0216', 'password_hash': 'scrypt:32768:8:1$dNFBetT9HXXLQfUz$d05f653602d029b4a8890baf40b651b66754e99645ccdf06d72e39240049f80dd19329f867fbc8310fd0c807b2f00ab94de9638596061612ac6fcfae99a479c3', 'role': 'student', 'name': 'KIMIDI SARANYA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.9, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 72, 'username': '25W65A0218', 'password_hash': 'scrypt:32768:8:1$nuxxwyO5PiP5agQD$243b22034e71ac3a7b6c85e31b3801dbfdf5395e91723224f7d408046a3a531734f4ecb11327aecb2b739a916ca209f3652532a63cf6eb4cddae3e3c32ac7c21', 'role': 'student', 'name': 'KONCHADA PAVAN KUMAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.98, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 73, 'username': '25W65A0219', 'password_hash': 'scrypt:32768:8:1$olD6c39aOSW4WhpP$9043681ab25a2c43eb2407a5cc5aa08e0a8dfb32eb46c4ff938c07f500f705c07a9436daaf6f24c1516bcd2939271da844775a5b3907ad1773d1535f56ac3d8e', 'role': 'student', 'name': 'KONDRA VENKATA RAMANA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.55, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 74, 'username': '25W65A0220', 'password_hash': 'scrypt:32768:8:1$5xKOrVW0hcnfrpGR$15b064ce4b1236531b1db60adc6a55d65cf6ad93171866a4ec7d1711f1a94f1bc89f3b4211d7b79361f6511bd0775a4b0e1c186c3ba69fbaeb2babc0fdfcb3a3', 'role': 'student', 'name': 'KOYYANA SURESH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.33, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 75, 'username': '25W65A0221', 'password_hash': 'scrypt:32768:8:1$lwJupYYfYQ4LMLA7$e9a9c63ee3a2ec4dded685d3a27433c63fc61173546022f4df6f295d9e2377a538740a2609c6cb110e315ea103ad5ba5c5ea9dade23c4fd8e74a48ab56e1ee1e', 'role': 'student', 'name': 'LABBA VENKATAPAVAN', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.52, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 76, 'username': '25W65A0223', 'password_hash': 'scrypt:32768:8:1$KlWWyCFSxW6oOfeC$765a71e989bb8f763e397e90cd93175532289c56e0ddde3a97593e5c31906e2571746fd3d285a764fe72013bd8458ed84047b3363f829ec857dc488b96a6ccf2', 'role': 'student', 'name': 'MAILAPALLI TEJA', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.7, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 77, 'username': '25W65A0224', 'password_hash': 'scrypt:32768:8:1$ET6wSstu4GLh6thP$10362fb87269902d13e43042ab9db13d6862f8853e24fadce4d136a846ba6c1fc716da6c0d71e884f37bf38a30e445a567f375cb2339a9a393acc407f410470b', 'role': 'student', 'name': 'MANDA YUVA RAJU', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.95, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 78, 'username': '25W65A0225', 'password_hash': 'scrypt:32768:8:1$jlK1EmxMff49d7cq$64f81f7973b2b1edfd1535e663b7eb7e028daee4b26b46427be81964e558f4b02dcc1177e3a72c982e8edd52e084d34690a862ecb2384c0006f8fe446545080f', 'role': 'student', 'name': 'MENDA CHANDINI', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.75, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 79, 'username': '25W65A0226', 'password_hash': 'scrypt:32768:8:1$PG6R3zEGTyctVlBk$dcc46155dcd1143a983af5e85364372f1d1349edb598ba42790743ce495ff6ed65a8ba04d68014ab6961b836834c676fb69d41660cc49681db7ae1ebc305c8b9', 'role': 'student', 'name': 'NAKKA YAGNESH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.14, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 80, 'username': '25W65A0227', 'password_hash': 'scrypt:32768:8:1$yIjcGcF1o1zI2PGq$00335d21e8cb6a5a2141e15579c605a4a220cc86605501b6570b3757fcd111124d548756136c3ed5482d73356279893ec654c2dad2ebaf04084c4ec3f7990e4c', 'role': 'student', 'name': 'NEDURU VENUGOPAL', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.02, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 81, 'username': '25W65A0228', 'password_hash': 'scrypt:32768:8:1$upAnNCkhZ3x6hOhI$79121170587ff836ba331ec3548570bec37f26041c2b41e4104c6d23d44914dfea9ebcc27ccdd7de9a6c6ba5cea8df790b5dcd79fb1006608e2f9005925e0770', 'role': 'student', 'name': 'NUKA POSHAN', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.17, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 82, 'username': '25W65A0231', 'password_hash': 'scrypt:32768:8:1$1bIpxg9ZGxdqqfFs$879d5a5bcc0f8c91c180a6e9b6e9c211648ec942e4988c0d0cfa10768a12996ce36f6d06059dd3be3d9a5d9ce3f4fadcba1f2cb4b792d6cdf9d724e98b40948d', 'role': 'student', 'name': 'PILLI HARSHITH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.89, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 83, 'username': '25W65A0232', 'password_hash': 'scrypt:32768:8:1$wbukGizTWttJfcuw$6ebcdeae1260aad4eccd31f206338efdf86ca0b0118b3329f7a44c48f6ea31ce1e98524a455810f40429e663d92538302d674e0222e81c2b06f4506b520b241c', 'role': 'student', 'name': 'PINNINTI GOWTHAM', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.62, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 84, 'username': '25W65A0233', 'password_hash': 'scrypt:32768:8:1$DHBpaFwNEjh3Yx0S$c1ce12e1c8dbceb6dee49ae92636c0ed12c3eb6757b6bbf8ccda1f1e199a0eded86d9398c76eb28c4c7009b540400255dcb7db79fc122d6de0d55660f0631f8d', 'role': 'student', 'name': 'RUNKU PRAVEEN KUMAR', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.05, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 85, 'username': '25W65A0234', 'password_hash': 'scrypt:32768:8:1$1ejsUdEpZqk593cX$ccfbd4cd7e2258e5dce21d9d00e837ab6d36cbcb8dd73697f1117fdcffdab83c66d619bb751a455fcf3caac5863bcbc4040190c6fa43f8cb19273e87f810cdc4', 'role': 'student', 'name': 'SIMMA SREERAM', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.9, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 86, 'username': '25W65A0236', 'password_hash': 'scrypt:32768:8:1$JehVebKqIhBB99Sq$7b7b05abd3d2741e6f7db462023c9c5df6d82bee0be5c8719342cc232841a0899c49c35bb455212f18eef52a113e3ffffb7ebfacdbe8c27d11f3d35d372e2a05', 'role': 'student', 'name': 'TAMMINA AKHIL', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 8.05, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 87, 'username': '25W65A0237', 'password_hash': 'scrypt:32768:8:1$TeWM09E2blRk5Y0c$b156c8c74b4b03ff8ad98d5a91cf43bb0f825961ab75d0439943aa6e268118c1abc4617111dcd7676997a967eb7e8bb1141fdab33eb4c19f598b22bb414af365', 'role': 'student', 'name': 'VELAMALA DINEESH', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.5, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 88, 'username': '25W65A0239', 'password_hash': 'scrypt:32768:8:1$jOQVYt48YXa6JVgl$588576746cb1f0f7c0b977f41b54d8044881e7d395cbf27ae9ce17576a00202f87633f83460f0425d54e2f071c0d97f62a9cc41a19bcd5892bdc5e66bb084917', 'role': 'student', 'name': 'PONNADA RAMKISHORE', 'extra': '', 'created_at': '2026-08-24 10:34:19', 'email': '', 'section': '', 'year': '3', 'batch': '', 'cgpa': 7.9, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 90, 'username': 'faculty', 'password_hash': 'scrypt:32768:8:1$SQIuUY1U7xLTwKl6$0f2053a75fddf6a2451cb4e826bb7ee564e6917e5dbef24663b351dade4ae2bc82e0dc1375802c0c3924dcadf2d4e2d4dea229568f4452c9a60a19a20cc6d389', 'role': 'faculty', 'name': 'Dr. G.T. Chandra Sekhar', 'extra': 'M.Tech, Ph.D. - 18 years experience', 'created_at': '2026-08-24 10:51:50', 'email': 'hod.eee@srisivani.edu.in', 'section': '', 'year': '', 'batch': '', 'cgpa': None, 'designation': 'Professor & HoD', 'entry': 'regular', 'is_admin': 0}, {'id': 91, 'username': '21A31A0201', 'password_hash': 'scrypt:32768:8:1$wFZ3GQpwCw96dLVF$2dc23890853c02153811395b19462cda1482925c905f635c993ff99ea82e628673faec8b9e0f86f8c901ac9ba6c7f54b027c39ac1cfc8f14cdc4cd5e7b2d1ae2', 'role': 'student', 'name': 'K. Venkata Surya', 'extra': 'Roll 21A31A0201', 'created_at': '2026-08-24 16:55:19', 'email': 'surya.21a31a0201@srisivani.edu.in', 'section': 'A', 'year': 'III-I (3rd Year, 1st Sem)', 'batch': '2021-25', 'cgpa': 8.24, 'designation': '', 'entry': 'regular', 'is_admin': 0}, {'id': 999, 'username': 'admin', 'password_hash': 'scrypt:32768:8:1$mYAMlrVK7ZrHlCE1$68108f3b005b36f7b9bc2a7c7aaa1879ec2507383071a0ef9bf5dd96d746631ab3b0370559cbb2ef1fd8e956ef2a43eba3a644b0d400bf6e8abc00897b4fc02f', 'role': 'faculty', 'name': 'Super Admin', 'extra': '', 'created_at': '2026-08-29 13:48:46', 'email': '', 'section': '', 'year': '', 'batch': '', 'cgpa': None, 'designation': '', 'entry': 'regular', 'is_admin': 1}]

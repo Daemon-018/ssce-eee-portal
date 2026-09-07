@@ -8,6 +8,7 @@ from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, g)
 
 from db import get_db, init_db, seed_users
+from seed_data import build_db
 
 app = Flask(__name__)
 app.secret_key = "ssce-eee-dev-key-change-me"
@@ -16,6 +17,19 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 init_db()
 seed_users()
+
+# Fresh-deploy bootstrap: if the DB has no real data, rebuild it fully from seed_data.py
+_conn = get_db()
+try:
+    _n = _conn.execute("SELECT COUNT(*) FROM marks").fetchone()[0]
+except Exception:
+    _n = 0
+_conn.close()
+if _n == 0:
+    print("[db] empty DB detected - rebuilding full dataset from seed_data.py")
+    build_db()
+    init_db()
+    seed_users()
 
 
 @app.teardown_appcontext
