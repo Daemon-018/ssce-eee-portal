@@ -14,6 +14,9 @@
 
     <div class="dash-grid">
       {% if role == 'student' %}
+      <a class="card dash-card" href="{{ url_for('marks') }}">
+        <h3>My Marks</h3><p>Mid-sem marks (3-1) + previous semester results.</p>
+      </a>
       <a class="card dash-card" href="{{ url_for('profile') }}">
         <h3>My Profile</h3><p>View roll number, section, batch and CGPA.</p>
       </a>
@@ -55,6 +58,9 @@
       </a>
       <a class="card dash-card" href="{{ url_for('resume_builder') }}">
         <h3>Resume Builder</h3><p>Build your EEE resume, then save as PDF.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('apply_leave') }}">
+        <h3>Apply Leave</h3><p>Submit a leave request and track its status.</p>
       </a>
       <a class="card dash-card" href="{{ url_for('notices') }}">
         <h3>Notices</h3><p>Department circulars and announcements.</p>

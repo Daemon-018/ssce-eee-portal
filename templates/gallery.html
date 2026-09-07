@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Gallery{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <div class="page-head">
+      <div class="eyebrow">Campus</div>
+      <h1>Gallery</h1>
+      <p class="muted">Moments from the department — labs, events, campus.</p>
+    </div>
+    {% if rows %}
+      <div class="faculty-grid">
+        {% for r in rows %}
+        <figure class="card fcard" style="margin:0">
+          <img src="{{ url_for('static', filename='gallery/' + r['filename']) }}" alt="{{ r['title'] }}" loading="lazy">
+          <figcaption>
+            <h3>{{ r['title'] }}</h3>
+            <p class="muted">{{ r['caption'] }}</p>
+          </figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card empty-card">
+        <b>Gallery coming soon</b>
+        <p class="muted">Department photos will be added here.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -2,31 +2,47 @@
 {% block title %}About EEE Dept{% endblock %}
 {% block content %}
 
-<!-- HERO -->
+<!-- HERO — navy gradient + amber live-current stats + waveform -->
 <section class="hero">
   <div class="container hero-inner">
-    <div class="hero-badge">NBA Accredited · Est. 2006</div>
-    <h1>Electrical &amp; Electronics<br>Engineering Department</h1>
-    <p>Powering futures since 2006 — moulding tomorrow's technocrats with high
-       calibre and commitment, from the heart of Sri Sivani College of Engineering.</p>
-    <div class="hero-actions">
-      <a class="btn btn-solid" href="#about">About the Department</a>
-      <a class="btn btn-outline-light" href="{{ url_for('login', role='student') }}">Student Login</a>
-      <a class="btn btn-outline-light" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
-    </div>
-    <div class="hero-stats">
-      <div><strong>2006</strong><span>Established</span></div>
-      <div><strong>60</strong><span>B.Tech Intake</span></div>
-      <div><strong>14</strong><span>Batches Graduated</span></div>
-      <div><strong>NBA</strong><span>Accredited</span></div>
+    <div class="hero-flex">
+      <div class="hero-left">
+        <div class="hero-badge">NBA Accredited · Est. 2006</div>
+        <h1>Electrical &amp; Electronics<br>Engineering Department</h1>
+        <p>Powering futures since 2006 — moulding tomorrow's technocrats with high
+           calibre and commitment, from the heart of Sri Sivani College of Engineering.</p>
+        <div class="hero-actions">
+          <a class="btn btn-solid" href="#about">About the Department</a>
+          <a class="btn btn-outline-light" href="{{ url_for('login', role='student') }}">Student Login</a>
+          <a class="btn btn-outline-light" href="{{ url_for('login', role='faculty') }}">Faculty Login</a>
+        </div>
+        <div class="hero-stats">
+          <div><b>2006</b><span>Established</span></div>
+          <div><b>60</b><span>B.Tech Intake</span></div>
+          <div><b>14</b><span>Batches Graduated</span></div>
+          <div><b>NBA</b><span>Accredited</span></div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-img-wrap">
+          <img src="{{ url_for('static', filename='images/department-eee.jpeg') }}" alt="EEE Department" class="hero-img">
+        </div>
+        <div class="hero-img-caption">EEE Department</div>
+      </div>
     </div>
   </div>
+  <!-- AC waveform — the EEE signature -->
+  <svg class="waveform" viewBox="0 0 600 40" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 20 C 37.5 11, 75 11, 112.5 20 S 187.5 29, 225 20 S 300 11, 337.5 20 S 412.5 29, 450 20 S 525 11, 562.5 20 S 600 20 600 20"
+          fill="none" stroke="#2A4E76" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>
 </section>
 
 <!-- ABOUT -->
 <section id="about" class="section">
   <div class="container two-col">
     <div>
+      <div class="eyebrow">About the department</div>
       <h2>About EEE Dept.</h2>
       <p>The Department of Electrical and Electronics Engineering was established in the academic year
          <strong>2006</strong> with an annual intake of <strong>60</strong>. The Department was accredited
@@ -56,6 +72,7 @@
 <!-- COURSES -->
 <section id="courses" class="section section-alt">
   <div class="container">
+    <div class="eyebrow center">Programmes</div>
     <h2 class="center">Courses Offered</h2>
     <div class="course-grid">
       <div class="card course-card">
@@ -87,6 +104,7 @@
 <!-- FACULTY -->
 <section id="faculty" class="section">
   <div class="container">
+    <div class="eyebrow center">People</div>
     <h2 class="center">Our Faculty</h2>
     <p class="center muted">Qualified and committed faculty with extensive experience.</p>
     <div class="faculty-grid">
@@ -151,6 +169,7 @@
 <!-- SALIENT FEATURES -->
 <section id="features" class="section section-alt">
   <div class="container">
+    <div class="eyebrow center">Why EEE</div>
     <h2 class="center">Salient Features</h2>
     <div class="feature-grid">
       <div class="card feature-card"><h3>Experienced Faculty</h3><p>Qualified and committed faculty with extensive experience.</p></div>

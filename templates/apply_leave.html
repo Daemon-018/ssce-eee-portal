@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Apply Leave{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container">
+    <div class="page-head">
+      <div class="eyebrow">Student</div>
+      <h1>Apply for Leave</h1>
+      <p class="muted">Submit a leave request — status shows here as pending / approved / rejected.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h3>New request</h3>
+        <form method="POST" action="{{ url_for('apply_leave') }}" class="form-inline" style="align-items:stretch;flex-direction:column">
+          <label>Reason</label>
+          <textarea class="input" name="reason" rows="3" required placeholder="e.g. Medical appointment"></textarea>
+          <div class="form-row">
+            <div>
+              <label>From</label>
+              <input class="input" type="date" name="from_date" required>
+            </div>
+            <div>
+              <label>To</label>
+              <input class="input" type="date" name="to_date" required>
+            </div>
+          </div>
+          <button class="btn btn-solid" type="submit" style="align-self:flex-start">Submit request</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Your requests</h3>
+        {% if rows %}
+          {% for r in rows %}
+          <div class="mat-row">
+            <div>
+              <div class="mat-title"><strong>{{ r['reason'] }}</strong></div>
+              <div class="small muted">{{ r['from_date'] }} → {{ r['to_date'] }}</div>
+            </div>
+            <span class="role-badge {{ 'ok' if r['status']=='approved' else ('warn' if r['status']=='pending' else 'bad') }}">{{ r['status'] }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-card"><b>No requests yet</b>Your submitted leaves will appear here.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

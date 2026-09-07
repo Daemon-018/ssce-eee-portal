@@ -206,8 +206,31 @@ def init_db():
     conn.commit()
     conn.close()
 
+
+
+def _ensure_leaves_gallery(conn):
+    conn.execute("""CREATE TABLE IF NOT EXISTS leaves (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        name TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        from_date TEXT NOT NULL,
+        to_date TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS gallery (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT,
+        filename TEXT,
+        caption TEXT,
+        added_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    conn.commit()
+
 def seed_users():
     conn = get_db()
+    _ensure_leaves_gallery(conn)
     users = [
         ("21A31A0201", "student123", "student", "K. Venkata Surya",
          "surya.21a31a0201@srisivani.edu.in", "A", "III-I (3rd Year, 1st Sem)",

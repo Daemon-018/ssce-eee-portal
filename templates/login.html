@@ -4,9 +4,9 @@
 <section class="auth-section">
   <div class="auth-card">
     <div class="auth-head">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SSCE" class="auth-logo">
+      <div class="auth-logo"><img src="{{ url_for('static', filename='images/logo.jpeg') }}" alt="SSCE" style="width:100%;height:100%;object-fit:contain;border-radius:14px"></div>
       <h1>{{ 'Student Portal' if role=='student' else 'Faculty Portal' }}</h1>
-      <p>{{ 'Sign in with your roll number' if role=='student' else 'Sign in with your faculty ID' }}</p>
+      <p class="muted">{{ 'Sign in with your roll number' if role=='student' else 'Sign in with your faculty ID' }}</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

@@ -72,7 +72,6 @@ def do_login():
     password = request.form.get("password", "")
 
     db = get_db_conn()
-    # roll numbers may be typed in any case -> match case-insensitively
     user = db.execute(
         "SELECT * FROM users WHERE username=? COLLATE NOCASE AND role=?",
         (username, role)).fetchone()
@@ -90,6 +89,7 @@ def do_login():
     session["username"] = user["username"]
     session["name"] = user["name"]
     session["role"] = user["role"]
+    session["is_admin"] = user["is_admin"] if "is_admin" in user else 0
     session["year"] = user["year"] or ""
     session.permanent = True
     flash(f"Welcome back, {user['name']}!", "success")
@@ -112,14 +112,13 @@ def timetable():
     db = get_db_conn()
     rows = db.execute(
         """SELECT * FROM timetable WHERE program='B.Tech' AND year_sem='3-1'
-           ORDER BY day, period"""
+           ORDER BY day, period""",
     ).fetchall()
     days = {1: "Monday", 2: "Tuesday", 3: "Wednesday",
             4: "Thursday", 5: "Friday", 6: "Saturday"}
     grid = {d: {p: None for p in range(1, 8)} for d in range(1, 7)}
     for r in rows:
         grid[r["day"]][r["period"]] = r
-    # split subjects into theory vs labs
     theory, labs = set(), set()
     for r in rows:
         subj = r["subject"]
@@ -138,24 +137,19 @@ def timetable():
 def syllabus():
     db = get_db_conn()
     sem = request.args.get("sem", "3-1")
-    # semester visibility depends on entry type + current year:
-    # - regular entry: all 8 sems
-    # - lateral entry, 1st year: still sees 1-1..4-2 (fresh lateral students)
-    # - lateral entry, 2nd+ year: 2-1..4-2 (skipped 1st year)
     entry = "lateral"
     if session.get("role") == "student":
         me = db.execute("SELECT entry, year FROM users WHERE id=?", (session.get("user_id"),)).fetchone()
         entry = (me["entry"] if me and me["entry"] else "regular")
         is_first_year = bool(me and me["year"] and "1st Year" in me["year"])
         if entry == "lateral" and is_first_year:
-            entry = "lateral1y"   # lateral but currently in 1st year -> sees all 8
+            entry = "lateral1y"
     all_sems = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]
     allowed = all_sems if entry in ("regular", "lateral1y") else all_sems[2:]
     sems = [s for s in all_sems if s in allowed and db.execute(
         "SELECT COUNT(*) c FROM syllabus WHERE year_sem=?", (s,)).fetchone()["c"] > 0]
     if sem not in sems:
         sem = sems[0] if sems else "3-1"
-    # default to current year's semester for convenience
     if session.get("role") == "student":
         me2 = db.execute("SELECT year FROM users WHERE id=?", (session.get("user_id"),)).fetchone()
         y = (me2["year"] if me2 and me2["year"] else "")
@@ -165,8 +159,7 @@ def syllabus():
             sem = request.args.get("sem", default_sem)
     rows = db.execute(
         """SELECT * FROM syllabus WHERE program='B.Tech' AND year_sem=?
-           ORDER BY code""", (sem,)
-    ).fetchall()
+           ORDER BY code""", (sem,)).fetchall()
     import json as _json
     subjects = []
     for r in rows:
@@ -219,9 +212,8 @@ def fac_attendance():
     rows = db.execute(
         """SELECT a.*, u.name FROM attendance a
            JOIN users u ON u.username=a.username
-           ORDER BY a.username, a.subject"""
+           ORDER BY a.username, a.subject""",
     ).fetchall()
-    # pivot: subject -> {username: (attended, total)}
     data = {}
     for r in rows:
         data.setdefault(r["subject"], {})[r["username"]] = (r["attended"], r["total"])
@@ -310,7 +302,6 @@ def fac_timetable_update():
     flash(f"Slot updated: Day {day} Period {period}.", "success")
     return redirect(url_for("fac_timetable"))
 
-
 # ---------------- marks (student view + faculty manage) ----------------
 
 
@@ -337,7 +328,7 @@ def fac_marks():
     rows = db.execute(
         """SELECT m.*, u.name FROM marks m
            JOIN users u ON u.username=m.username
-           ORDER BY m.subject, m.username, m.exam"""
+           ORDER BY m.subject, m.username, m.exam""",
     ).fetchall()
     data = {}
     for r in rows:
@@ -370,7 +361,7 @@ def fac_marks_update():
     if exists:
         db.execute(
             """UPDATE marks SET marks=?,max_marks=?,updated_at=datetime('now','localtime')
-               WHERE username=? AND subject=? AND exam=?""",
+                           WHERE username=? AND subject=? AND exam=?""",
             (marks_val, max_marks, username, subject, exam))
     else:
         db.execute(
@@ -381,6 +372,34 @@ def fac_marks_update():
     flash(f"Marks saved: {username} - {subject} - {exam}.", "success")
     return redirect(url_for("fac_marks"))
 
+
+@app.route("/admin/edit/<path:filepath>", methods=["GET", "POST"])
+@login_required(role="faculty")
+def admin_edit_file(filepath):
+    if not session.get("is_admin"):
+        flash("Super Admin access required.", "error")
+        return redirect(url_for("dashboard"))
+    
+    root = "/data/data/com.termux/files/home/eee_site"
+    full_path = f"{root}/{filepath}"
+    
+    if not full_path.startswith(root):
+        return "Access Denied", 403
+
+    if request.method == "POST":
+        new_content = request.form.get("content", "")
+        with open(full_path, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        flash(f"File {filepath} updated successfully!", "success")
+        return redirect(url_for("admin_edit_file", filepath=filepath))
+
+    try:
+        with open(full_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception:
+        return "File not found", 404
+
+    return render_template("admin_edit.html", content=content, filepath=filepath)
 
 # ---------------- study support (student + faculty view) ----------------
 
@@ -417,9 +436,7 @@ def pyq():
 @login_required()
 def solved_papers():
     db = get_db_conn()
-    rows = db.execute(
-        "SELECT * FROM solved_papers ORDER BY subject, year DESC, exam"
-    ).fetchall()
+    rows = db.execute("SELECT * FROM solved_papers ORDER BY subject, year DESC, exam").fetchall()
     by_subject = {}
     for r in rows:
         by_subject.setdefault(r["subject"], []).append(r)
@@ -430,9 +447,7 @@ def solved_papers():
 @login_required()
 def academic_calendar():
     db = get_db_conn()
-    rows = db.execute(
-        "SELECT * FROM academic_calendar ORDER BY event_date"
-    ).fetchall()
+    rows = db.execute("SELECT * FROM academic_calendar ORDER BY event_date").fetchall()
     return render_template("academic_calendar.html", rows=rows)
 
 
@@ -443,19 +458,18 @@ def backlog_tracker():
     if session["role"] == "student":
         rows = db.execute(
             "SELECT * FROM backlog WHERE username=? ORDER BY cleared, sem, subject",
-            (session["username"],),
+            (session["username"],)
         ).fetchall()
     else:
         rows = db.execute(
             """SELECT b.*, u.name FROM backlog b
                JOIN users u ON u.username=b.username
-               ORDER BY b.cleared, b.sem, b.subject"""
+               ORDER BY b.cleared, b.sem, b.subject""",
         ).fetchall()
     pending = [r for r in rows if not r["cleared"]]
     cleared = [r for r in rows if r["cleared"]]
     return render_template("backlog_tracker.html", rows=rows,
                            pending=pending, cleared=cleared)
-
 
 @app.route("/exam-notifications")
 @login_required()
@@ -467,41 +481,9 @@ def exam_notifications():
     return render_template("exam_notifications.html", rows=rows)
 
 
-@app.route("/mentorship")
-@login_required()
-def mentorship():
-    db = get_db_conn()
-    if session["role"] == "student":
-        rows = db.execute(
-            "SELECT * FROM mentorship WHERE username=?",
-            (session["username"],),
-        ).fetchall()
-    else:
-        rows = db.execute(
-            """SELECT m.*, u.name FROM mentorship m
-               JOIN users u ON u.username=m.username
-               ORDER BY m.username"""
-        ).fetchall()
-    return render_template("mentorship.html", rows=rows)
-
-
-@app.route("/extra-classes")
-@login_required()
-def extra_classes():
-    db = get_db_conn()
-    rows = db.execute(
-        "SELECT * FROM extra_classes ORDER BY date, time"
-    ).fetchall()
-    return render_template("extra_classes.html", rows=rows)
-
-
-# ---------------- career / jobs ----------------
-
 JOB_CATEGORY_META = [
-    ("core-govt", "Core · Government Jobs", "PSUs, railways, power utilities — your EEE degree is the requirement."),
-    ("core-private", "Core · Private Sector", "Design, project and site engineering at core EEE companies."),
-    ("noncore-govt", "Non-Core · Government Jobs", "Banking, state govt, defence — open to all graduates."),
-    ("noncore-private", "Non-Core · Private Sector", "IT services and consulting roles open to every branch."),
+    ("core", "Core Jobs", "Power, energy and electrical core roles."),
+    ("noncore", "Non-Core Jobs", "IT, services and analytics roles."),
     ("reasoning", "Reasoning Practice", "Logical and verbal reasoning resources."),
     ("aptitude", "Aptitude Practice", "Quantitative aptitude for placements and govt exams."),
     ("arithmetic", "Arithmetic Practice", "Speed arithmetic and shortcut techniques."),
@@ -514,72 +496,95 @@ def careers():
     db = get_db_conn()
     rows = db.execute(
         "SELECT * FROM job_resources ORDER BY category, title"
-    ).fetchall()
+    ).fetchall() if db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='job_resources'").fetchone() else []
     groups = {}
     for r in rows:
         groups.setdefault(r["category"], []).append(r)
     return render_template("careers.html", groups=groups, meta=JOB_CATEGORY_META)
 
 
-@app.route("/resume", methods=["GET", "POST"])
-@login_required(role="student")
+@app.route("/resume-builder", methods=["GET", "POST"])
+@login_required()
 def resume_builder():
     db = get_db_conn()
-    username = session["username"]
+    me = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone() if session.get("user_id") else None
     if request.method == "POST":
-        def getlist(key):
-            return [v.strip() for v in request.form.getlist(key) if v.strip()]
+        me2 = dict(me) if me else {}
         data = {
-            "fullname": request.form.get("fullname", "").strip(),
-            "email": request.form.get("email", "").strip(),
-            "phone": request.form.get("phone", "").strip(),
-            "objective": request.form.get("objective", "").strip(),
-            "education": getlist("education"),
-            "skills": getlist("skills"),
-            "projects": getlist("projects"),
-            "certifications": getlist("certifications"),
-            "achievements": getlist("achievements"),
+            "fullname": request.form.get("fullname", me2.get("name", "")),
+            "email": request.form.get("email", me2.get("email", "")),
+            "phone": request.form.get("phone", ""),
+            "objective": request.form.get("objective", ""),
+            "education": request.form.get("education", "").splitlines(),
+            "skills": request.form.get("skills", "").splitlines(),
+            "projects": request.form.get("projects", "").splitlines(),
+            "certifications": request.form.get("certifications", "").splitlines(),
+            "achievements": request.form.get("achievements", "").splitlines(),
         }
-        exists = db.execute(
-            "SELECT id FROM resume_builder WHERE username=?", (username,)
-        ).fetchone()
-        if exists:
-            db.execute(
-                """UPDATE resume_builder SET data=?, updated_at=datetime('now','localtime')
-                   WHERE username=?""",
-                (json.dumps(data), username),
-            )
-        else:
-            db.execute(
-                "INSERT INTO resume_builder (username,data) VALUES (?,?)",
-                (username, json.dumps(data)),
-            )
-        db.commit()
-        flash("Resume saved. Open the print view and Save as PDF.", "success")
+        session["resume"] = data
+        flash("Resume saved.", "success")
         return redirect(url_for("resume_builder"))
-    row = db.execute(
-        "SELECT * FROM resume_builder WHERE username=?", (username,)
-    ).fetchone()
-    data = json.loads(row["data"]) if row else {
-        "fullname": "", "email": "", "phone": "", "objective": "",
-        "education": [], "skills": [], "projects": [],
-        "certifications": [], "achievements": [],
-    }
+    data = session.get("resume")
+    if not data:
+        data = {
+            "fullname": me["name"] if me else "",
+            "email": me["email"] if me else "",
+            "phone": "",
+            "objective": "",
+            "education": [], "skills": [], "projects": [],
+            "certifications": [], "achievements": [],
+        }
     return render_template("resume_builder.html", data=data)
 
 
-@app.route("/resume/print")
-@login_required(role="student")
+@app.route("/resume-print")
+@login_required()
 def resume_print():
     db = get_db_conn()
-    row = db.execute(
-        "SELECT * FROM resume_builder WHERE username=?", (session["username"],)
-    ).fetchone()
-    data = json.loads(row["data"]) if row else {}
+    me = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone() if session.get("user_id") else None
+    data = session.get("resume")
+    if not data:
+        data = {
+            "fullname": me["name"] if me else "",
+            "email": me["email"] if me else "",
+            "phone": "", "objective": "",
+            "education": [], "skills": [], "projects": [],
+            "certifications": [], "achievements": [],
+        }
     return render_template("resume_print.html", data=data)
 
 
-# ---------------- faculty: performance analysis ----------------
+@app.route("/change-password", methods=["GET", "POST"])
+@login_required()
+def change_password():
+    db = get_db_conn()
+    if request.method == "POST":
+        cur = request.form.get("current", "")
+        new = request.form.get("new", "")
+        conf = request.form.get("confirm", "")
+        if not new or len(new) < 4:
+            flash("New password must be at least 4 characters.", "error")
+            return redirect(url_for("change_password"))
+        if new != conf:
+            flash("New passwords do not match.", "error")
+            return redirect(url_for("change_password"))
+        u = db.execute("SELECT password_hash FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        from werkzeug.security import check_password_hash, generate_password_hash
+        if not u or not check_password_hash(u["password_hash"], cur):
+            flash("Current password is incorrect.", "error")
+            return redirect(url_for("change_password"))
+        db.execute("UPDATE users SET password_hash=? WHERE id=?", (generate_password_hash(new), session["user_id"]))
+        db.commit()
+        flash("Password updated.", "success")
+        return redirect(url_for("dashboard"))
+    return render_template("change_password.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
 
 SUBJECT_ORDER = ["Power System Analysis - II", "Power Electronics - II",
                  "Electrical Machine Design", "Control Systems",
@@ -597,7 +602,7 @@ def _analysis_for_student(db, username):
     att_map = {r["subject"]: (r["attended"], r["total"]) for r in att}
     subj_rows = db.execute(
         "SELECT * FROM syllabus ORDER BY code"
-    ).fetchall()
+    ).fetchall() if db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='syllabus'").fetchone() else []
     subject_names = [r["subject"] for r in subj_rows] or SUBJECT_ORDER
 
     per_subject = {}
@@ -707,54 +712,66 @@ def fac_syllabus_tracker():
         return redirect(url_for("fac_syllabus_tracker"))
     rows = db.execute(
         "SELECT * FROM syllabus_tracker ORDER BY subject, unit"
-    ).fetchall()
+    ).fetchall() if db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='syllabus_tracker'").fetchone() else []
     subjects = sorted({r["subject"] for r in rows})
     return render_template("fac_syllabus_tracker.html", rows=rows, subjects=subjects)
 
 
-@app.route("/change-password", methods=["GET", "POST"])
-@login_required()
-def change_password():
+@app.route("/apply-leave", methods=["GET", "POST"])
+@login_required(role="student")
+def apply_leave():
     db = get_db_conn()
-    me = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
     if request.method == "POST":
-        from werkzeug.security import check_password_hash, generate_password_hash
-        old = request.form.get("old_password", "")
-        new = request.form.get("new_password", "")
-        confirm = request.form.get("confirm_password", "")
-        if not check_password_hash(me["password_hash"], old):
-            flash("Current password is incorrect.", "error")
-        elif len(new) < 6:
-            flash("New password must be at least 6 characters.", "error")
-        elif new != confirm:
-            flash("New password and confirm password do not match.", "error")
-        else:
-            db.execute(
-                "UPDATE users SET password_hash=? WHERE id=?",
-                (generate_password_hash(new), session["user_id"]),
-            )
-            db.commit()
-            session.clear()
-            flash("Password changed. Please login again.", "success")
-            role = "faculty" if me["role"] == "faculty" else "student"
-            return redirect(url_for("login", role=role))
-    return render_template("change_password.html")
+        reason = request.form.get("reason", "").strip()
+        from_date = request.form.get("from_date", "").strip()
+        to_date = request.form.get("to_date", "").strip()
+        if not reason or not from_date or not to_date:
+            flash("Fill in reason and dates.", "error")
+            return redirect(url_for("apply_leave"))
+        if from_date > to_date:
+            flash("From date cannot be after to date.", "error")
+            return redirect(url_for("apply_leave"))
+        db.execute(
+            "INSERT INTO leaves (username,name,reason,from_date,to_date) VALUES (?,?,?,?,?)",
+            (session["username"], session.get("name", ""), reason, from_date, to_date))
+        db.commit()
+        flash("Leave request submitted — pending approval.", "success")
+        return redirect(url_for("apply_leave"))
+    rows = db.execute(
+        "SELECT * FROM leaves WHERE username=? ORDER BY id DESC",
+        (session["username"],)).fetchall()
+    return render_template("apply_leave.html", rows=rows)
 
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    flash("Logged out.", "success")
-    return redirect(url_for("home"))
+@app.route("/gallery")
+def gallery():
+    db = get_db_conn()
+    rows = db.execute("SELECT * FROM gallery ORDER BY id DESC").fetchall()
+    return render_template("gallery.html", rows=rows)
 
 
-@app.errorhandler(404)
-def not_found(_e):
-    return render_template("404.html"), 404
+@app.route("/mentorship")
+@login_required()
+def mentorship():
+    db = get_db_conn()
+    if session["role"] == "student":
+        rows = db.execute(
+            "SELECT * FROM mentorship WHERE username=? ORDER BY username",
+            (session["username"],)).fetchall()
+    else:
+        rows = db.execute(
+            """SELECT m.*, u.name FROM mentorship m
+               JOIN users u ON u.username=m.username
+               ORDER BY m.username""",
+        ).fetchall()
+    return render_template("mentorship.html", rows=rows)
 
 
-if __name__ == "__main__":
-    import os
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "8080"))
-    app.run(host=host, port=port, debug=False)
+@app.route("/extra-classes")
+@login_required()
+def extra_classes():
+    db = get_db_conn()
+    rows = db.execute(
+        "SELECT * FROM extra_classes ORDER BY date, time"
+    ).fetchall()
+    return render_template("extra_classes.html", rows=rows)
