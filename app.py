@@ -893,3 +893,95 @@ def extra_classes():
         "SELECT * FROM extra_classes ORDER BY date, time"
     ).fetchall()
     return render_template("extra_classes.html", rows=rows)
+
+# ---------------- assignments (faculty upload / student view) ----------------
+
+
+@app.route("/assignments")
+@login_required()
+def assignments():
+    db = get_db_conn()
+    rows = db.execute(
+        "SELECT * FROM assignments ORDER BY subject, uploaded_at DESC"
+    ).fetchall()
+    # group by subject for nicer display
+    by_subject = {}
+    for r in rows:
+        by_subject.setdefault(r["subject"], []).append(r)
+    return render_template("assignments.html", by_subject=by_subject)
+
+
+@app.route("/faculty/assignments")
+@login_required(role="faculty")
+def fac_assignments():
+    db = get_db_conn()
+    subjects = [r[0] for r in db.execute(
+        "SELECT DISTINCT subject FROM timetable ORDER BY subject").fetchall()]
+    rows = db.execute(
+        "SELECT * FROM assignments ORDER BY uploaded_at DESC"
+    ).fetchall()
+    return render_template("fac_assignments.html", subjects=subjects, rows=rows)
+
+
+@app.route("/faculty/assignments/upload", methods=["POST"])
+@login_required(role="faculty")
+def fac_assignments_upload():
+    subject = request.form.get("subject", "").strip()
+    title = request.form.get("title", "").strip()
+    due_date = request.form.get("due_date", "").strip()
+    file = request.files.get("file")
+    if not subject or not title or file is None or not file.filename:
+        flash("Subject, title and file are required.", "error")
+        return redirect(url_for("fac_assignments"))
+
+    # secure-ish: keep extension, sanitize filename
+    from pathlib import Path
+    import re
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", Path(file.filename).name)
+    dest_dir = Path(app.root_path) / "static" / "uploads" / "assignments"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / safe
+    file.save(dest)
+
+    db = get_db_conn()
+    db.execute(
+        "INSERT INTO assignments (subject,title,filename,original_name,uploaded_by,due_date) VALUES (?,?,?,?,?,?)",
+        (subject, title, safe, file.filename, session.get("name", "Faculty"), due_date),
+    )
+    db.commit()
+    flash(f"Assignment uploaded: {file.filename}", "success")
+    return redirect(url_for("fac_assignments"))
+
+
+@app.route("/faculty/assignments/<int:aid>/delete", methods=["POST"])
+@login_required(role="faculty")
+def fac_assignments_delete(aid):
+    db = get_db_conn()
+    row = db.execute("SELECT * FROM assignments WHERE id=?", (aid,)).fetchone()
+    if row:
+        from pathlib import Path
+        f = Path(app.root_path) / "static" / "uploads" / "assignments" / row["filename"]
+        if f.exists():
+            f.unlink()
+        db.execute("DELETE FROM assignments WHERE id=?", (aid,))
+        db.commit()
+        flash("Assignment deleted.", "success")
+    return redirect(url_for("fac_assignments"))
+
+
+@app.route("/faculty/assignments/<int:aid>/download")
+@login_required()
+def fac_assignments_download(aid):
+    db = get_db_conn()
+    row = db.execute("SELECT * FROM assignments WHERE id=?", (aid,)).fetchone()
+    if row is None:
+        flash("Assignment not found.", "error")
+        return redirect(url_for("assignments"))
+    from flask import send_from_directory
+    from pathlib import Path
+    return send_from_directory(
+        str(Path(app.root_path) / "static" / "uploads" / "assignments"),
+        row["filename"],
+        as_attachment=True,
+        download_name=row["original_name"],
+    )

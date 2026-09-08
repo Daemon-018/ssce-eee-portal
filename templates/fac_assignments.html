@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Faculty - Assignment Management{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>Assignment Management</h1>
+    <p class="muted">Upload assignment PDFs, set due dates, delete outdated ones.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+      <h3>Upload New Assignment</h3>
+      <form method="POST" action="{{ url_for('fac_assignments_upload') }}" enctype="multipart/form-data" class="form-inline">
+        <select name="subject" required>
+          <option value="">-- Subject --</option>
+          {% for s in subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+        <input type="text" name="title" placeholder="Assignment title (e.g. Unit 1 - Numerical Problems)" required class="input">
+        <input type="date" name="due_date" class="input">
+        <input type="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip" required class="input">
+        <button class="btn btn-solid" type="submit">Upload</button>
+      </form>
+    </div>
+
+    {% if rows %}
+    <div class="card">
+      <h3>Posted Assignments ({{ rows|length }})</h3>
+      <div class="table-scroll">
+        <table class="grid-table assign-table">
+          <thead>
+            <tr><th>Subject</th><th>Title</th><th>Posted</th><th>Due</th><th>By</th><th></th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for a in rows %}
+            <tr>
+              <td>{{ a['subject'] }}</td>
+              <td><strong>{{ a['title'] }}</strong><br><small class="muted">{{ a['original_name'] }}</small></td>
+              <td>{{ a['uploaded_at'][:10] if a['uploaded_at'] else '-' }}</td>
+              <td>{{ a['due_date'] or '—' }}</td>
+              <td>{{ a['uploaded_by'] }}</td>
+              <td><a class="btn btn-sm btn-outline" href="{{ url_for('fac_assignments_download', aid=a['id']) }}">Download</a></td>
+              <td>
+                <form method="POST" action="{{ url_for('fac_assignments_delete', aid=a['id']) }}" onsubmit="return confirm('Delete this assignment?');">
+                  <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="card"><p class="muted">No assignments uploaded yet.</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

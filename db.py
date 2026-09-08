@@ -199,6 +199,17 @@ CREATE TABLE IF NOT EXISTS faculty_profiles (
     sort_order INTEGER DEFAULT 0,
     active INTEGER DEFAULT 1
 );
+
+CREATE TABLE IF NOT EXISTS assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subject TEXT NOT NULL,
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    uploaded_by TEXT NOT NULL,
+    uploaded_at TEXT DEFAULT (datetime('now','localtime')),
+    due_date TEXT DEFAULT ''
+);
 """
 
 def get_db():
