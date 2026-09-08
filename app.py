@@ -2,6 +2,7 @@
 Flask app: home, student login, faculty login, role dashboards.
 """
 import functools
+import re
 import json
 import sqlite3
 from flask import (Flask, render_template, request, redirect,
@@ -389,6 +390,117 @@ def fac_marks_update():
             (username, subject, exam, exam_marks, assign_marks, total))
     db.commit()
     flash(f"Marks saved: {username} - {subject} - {exam} ({exam_marks}/25 + {assign_marks}/5).", "success")
+    return redirect(url_for("fac_marks"))
+
+
+@app.route("/faculty/marks/upload", methods=["GET", "POST"])
+@login_required(role="faculty")
+def fac_marks_upload():
+    db = get_db_conn()
+    subjects = [r[0] for r in db.execute(
+        "SELECT DISTINCT subject FROM timetable WHERE year_sem='3-1' ORDER BY subject").fetchall()]
+
+    if request.method == "GET":
+        return render_template("fac_marks_upload.html", subjects=subjects, records=None, error=None)
+
+    # POST: parse the uploaded file
+    file = request.files.get("file")
+    if not file or not file.filename:
+        flash("Please select a file.", "error")
+        return redirect(url_for("fac_marks_upload"))
+
+    from pathlib import Path
+    import tempfile, os
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", Path(file.filename).name)
+    upload_dir = Path(app.root_path) / "static" / "uploads" / "temp"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    dest = upload_dir / safe
+    file.save(dest)
+
+    try:
+        from marks_parser import parse_marks_file
+        records = parse_marks_file(str(dest), available_subjects=subjects)
+    except ValueError as e:
+        flash(f"Parsing failed: {e}", "error")
+        return redirect(url_for("fac_marks_upload"))
+    finally:
+        if dest.exists():
+            dest.unlink()
+
+    if not records:
+        flash("No marks data found in the file.", "error")
+        return redirect(url_for("fac_marks_upload"))
+
+    # Store records in session for preview → confirm flow
+    session["pending_marks"] = records
+    session["pending_marks_filename"] = file.filename
+    return render_template("fac_marks_upload.html", subjects=subjects,
+                           records=records, filename=file.filename, error=None)
+
+
+@app.route("/faculty/marks/import", methods=["POST"])
+@login_required(role="faculty")
+def fac_marks_import():
+    records = session.get("pending_marks")
+    if not records:
+        flash("No pending marks to import. Upload a file first.", "error")
+        return redirect(url_for("fac_marks_upload"))
+
+    # Allow faculty to edit records in the form — re-read from POST
+    import json
+    edited_json = request.form.get("records_json")
+    if edited_json:
+        try:
+            records = json.loads(edited_json)
+        except (json.JSONDecodeError, TypeError):
+            pass  # fall back to session data
+
+    db = get_db_conn()
+    inserted = 0
+    updated = 0
+    errors = []
+
+    for r in records:
+        username = r.get("username", "").strip()
+        subject = r.get("subject", "").strip()
+        exam = r.get("exam", "").upper().replace(" ", "")
+        exam_marks = int(r.get("exam_marks", 0) or 0)
+        assign_marks = int(r.get("assign_marks", 0) or 0)
+
+        if not username or not subject or exam not in ("MID1", "MID2"):
+            continue
+        exam_marks = max(0, min(25, exam_marks))
+        assign_marks = max(0, min(5, assign_marks))
+        total = exam_marks + assign_marks
+
+        exists = db.execute(
+            "SELECT id FROM marks WHERE username=? AND subject=? AND exam=?",
+            (username, subject, exam)).fetchone()
+        if exists:
+            db.execute(
+                """UPDATE marks SET exam_marks=?,assign_marks=?,marks=?,max_marks=30,
+                   updated_at=datetime('now','localtime')
+                   WHERE username=? AND subject=? AND exam=?""",
+                (exam_marks, assign_marks, total, username, subject, exam))
+            updated += 1
+        else:
+            try:
+                db.execute(
+                    """INSERT INTO marks (username,subject,exam,exam_marks,assign_marks,marks,max_marks)
+                       VALUES (?,?,?,?,?,?,30)""",
+                    (username, subject, exam, exam_marks, assign_marks, total))
+                inserted += 1
+            except Exception as e:
+                errors.append(f"{username}/{subject}: {e}")
+
+    db.commit()
+    session.pop("pending_marks", None)
+    session.pop("pending_marks_filename", None)
+
+    msg = f"Imported: {inserted} new, {updated} updated."
+    if errors:
+        msg += f" {len(errors)} errors."
+    flash(msg, "success" if not errors else "error")
     return redirect(url_for("fac_marks"))
 
 

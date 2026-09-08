@@ -14,6 +14,9 @@
 
     <div class="card">
       <h3>Enter / Update Marks</h3>
+      <p class="muted small" style="margin-bottom:10px">
+        Prefer uploading a file? <a href="{{ url_for('fac_marks_upload') }}"><strong>AI Upload →</strong></a>
+      </p>
       <form method="POST" action="{{ url_for('fac_marks_update') }}" class="form-inline">
         <select name="subject" required>
           <option value="">-- Subject --</option>

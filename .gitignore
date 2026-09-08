@@ -9,3 +9,4 @@ current_*.txt
 .tunnel_enabled
 *.sock
 eee.db.bak*
+.env

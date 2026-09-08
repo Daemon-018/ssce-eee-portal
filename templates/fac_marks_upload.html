@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Faculty - AI Marks Upload{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>AI Marks Upload</h1>
+    <p class="muted">Upload an Excel/PDF marks sheet, AI reads it, you confirm. No manual entry.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="card">
+      <h3>Step 1 — Upload marks sheet</h3>
+      <p class="muted small">Supported: .xlsx, .xls, .pdf · Exam /25, Assignment /5</p>
+      <form method="POST" action="{{ url_for('fac_marks_upload') }}" enctype="multipart/form-data" class="form-inline">
+        <input type="file" name="file" accept=".xlsx,.xls,.pdf" required class="input">
+        <button class="btn btn-solid" type="submit">Parse File</button>
+      </form>
+      <p class="muted small" style="margin-top:8px">Tip: a clean table with a Roll No column, subject columns, and a MID1/MID2 column parses best.</p>
+    </div>
+
+    {% if records %}
+    <div class="card">
+      <h3>Step 2 — Review {{ records|length }} parsed records</h3>
+      <p class="muted small">File: <strong>{{ filename }}</strong> · Edit any value below, then confirm. Nothing is written until you confirm.</p>
+      <div class="table-scroll">
+        <table class="grid-table ai-preview-table" id="preview-table">
+          <thead>
+            <tr>
+              <th>Roll No</th><th>Subject</th><th>MID</th><th>Exam /25</th><th>Assign /5</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr data-idx="{{ loop.index0 }}">
+              <td class="edit-cell" contenteditable="true" data-field="username">{{ r['username'] }}</td>
+              <td class="edit-cell" contenteditable="true" data-field="subject">{{ r['subject'] }}</td>
+              <td>
+                <select data-field="exam">
+                  <option value="MID1" {% if r['exam']=='MID1' %}selected{% endif %}>MID 1</option>
+                  <option value="MID2" {% if r['exam']=='MID2' %}selected{% endif %}>MID 2</option>
+                </select>
+              </td>
+              <td><input type="number" data-field="exam_marks" value="{{ r['exam_marks'] }}" min="0" max="25" class="input num-sm"></td>
+              <td><input type="number" data-field="assign_marks" value="{{ r['assign_marks'] }}" min="0" max="5" class="input num-sm"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form method="POST" action="{{ url_for('fac_marks_import') }}" id="import-form" style="margin-top:14px">
+        <input type="hidden" name="records_json" id="records-json">
+        <button class="btn btn-solid" type="submit" onclick="return collectRecords()">Confirm &amp; Import All</button>
+        <a class="btn btn-ghost" href="{{ url_for('fac_marks_upload') }}">Discard</a>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+.num-sm{width:70px;padding:6px 8px;text-align:center}
+.edit-cell{min-width:120px}
+.edit-cell:focus{outline:2px solid var(--blue)}
+</style>
+
+<script>
+function collectRecords() {
+  const rows = document.querySelectorAll('#preview-table tbody tr');
+  const records = [];
+  rows.forEach(row => {
+    const get = field => (row.querySelector(`[data-field="${field}"]`) || {}).textContent || '';
+    const examMarks = row.querySelector('[data-field="exam_marks"]');
+    const assignMarks = row.querySelector('[data-field="assign_marks"]');
+    const examSel = row.querySelector('[data-field="exam"]');
+    records.push({
+      username: get('username').trim(),
+      subject: get('subject').trim(),
+      exam: examSel ? examSel.value : 'MID1',
+      exam_marks: examMarks ? parseInt(examMarks.value) || 0 : 0,
+      assign_marks: assignMarks ? parseInt(assignMarks.value) || 0 : 0,
+    });
+  });
+  document.getElementById('records-json').value = JSON.stringify(records);
+  return true;
+}
+</script>
+{% endblock %}
