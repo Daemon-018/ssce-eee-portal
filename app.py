@@ -340,6 +340,8 @@ def fac_marks():
     students = db.execute(
         "SELECT username,name,section FROM users WHERE role='student' ORDER BY username"
     ).fetchall()
+    subjects = [r[0] for r in db.execute(
+        "SELECT DISTINCT subject FROM timetable WHERE year_sem='3-1' ORDER BY subject").fetchall()]
     rows = db.execute(
         """SELECT m.*, u.name FROM marks m
            JOIN users u ON u.username=m.username
@@ -348,7 +350,7 @@ def fac_marks():
     data = {}
     for r in rows:
         data.setdefault(r["subject"], {}).setdefault(r["username"], {})[r["exam"]] = r
-    return render_template("fac_marks.html", students=students, data=data)
+    return render_template("fac_marks.html", students=students, subjects=subjects, data=data)
 
 
 @app.route("/faculty/marks/update", methods=["POST"])
@@ -362,29 +364,31 @@ def fac_marks_update():
         flash("Invalid exam.", "error")
         return redirect(url_for("fac_marks"))
     try:
-        marks_val = int(request.form.get("marks", 0))
-        max_marks = int(request.form.get("max_marks", 30))
+        exam_marks = int(request.form.get("exam_marks", 0))
+        assign_marks = int(request.form.get("assign_marks", 0))
     except ValueError:
         flash("Numbers only for marks.", "error")
         return redirect(url_for("fac_marks"))
-    if marks_val < 0 or max_marks <= 0 or marks_val > max_marks:
-        flash("Invalid marks range.", "error")
+    if not (0 <= exam_marks <= 25 and 0 <= assign_marks <= 5):
+        flash("Marks out of range (Exam 0-25, Assignment 0-5).", "error")
         return redirect(url_for("fac_marks"))
+    total = exam_marks + assign_marks
     exists = db.execute(
         "SELECT id FROM marks WHERE username=? AND subject=? AND exam=?",
         (username, subject, exam)).fetchone()
     if exists:
         db.execute(
-            """UPDATE marks SET marks=?,max_marks=?,updated_at=datetime('now','localtime')
-                           WHERE username=? AND subject=? AND exam=?""",
-            (marks_val, max_marks, username, subject, exam))
+            """UPDATE marks SET exam_marks=?,assign_marks=?,marks=?,max_marks=30,
+               updated_at=datetime('now','localtime')
+               WHERE username=? AND subject=? AND exam=?""",
+            (exam_marks, assign_marks, total, username, subject, exam))
     else:
         db.execute(
-            """INSERT INTO marks (username,subject,exam,marks,max_marks)
-               VALUES (?,?,?,?,?)""",
-            (username, subject, exam, marks_val, max_marks))
+            """INSERT INTO marks (username,subject,exam,exam_marks,assign_marks,marks,max_marks)
+               VALUES (?,?,?,?,?,?,30)""",
+            (username, subject, exam, exam_marks, assign_marks, total))
     db.commit()
-    flash(f"Marks saved: {username} - {subject} - {exam}.", "success")
+    flash(f"Marks saved: {username} - {subject} - {exam} ({exam_marks}/25 + {assign_marks}/5).", "success")
     return redirect(url_for("fac_marks"))
 
 
@@ -726,8 +730,8 @@ def _analysis_for_student(db, username):
     per_subject = {}
     for s in subject_names:
         m = [x for x in marks if x["subject"] == s]
-        best = max([x["marks"] for x in m], default=0)
-        total = max([x["max_marks"] for x in m], default=30)
+        best = max([(x["exam_marks"] if "exam_marks" in x and x["exam_marks"] is not None else x["marks"]) + (x["assign_marks"] if "assign_marks" in x and x["assign_marks"] is not None else 0) for x in m], default=0)
+        total = 30  # mid = exam/25 + assignment/5
         pct = round(best / total * 100) if total else 0
         a = att_map.get(s, (0, 0))
         att_pct = round(a[0] / a[1] * 100) if a[1] else 0

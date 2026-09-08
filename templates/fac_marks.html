@@ -4,7 +4,7 @@
 <section class="page-section">
   <div class="container wide">
     <h1>Marks Management</h1>
-    <p class="muted">Add, view and edit MID-1 / MID-2 marks · B.Tech EEE 3-1</p>
+    <p class="muted">Enter MID-1 / MID-2 marks · Exam <strong>/25</strong> + Assignment <strong>/5</strong> · B.Tech EEE 3-1</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -12,24 +12,28 @@
       {% endif %}
     {% endwith %}
 
-    <form method="POST" action="{{ url_for('fac_marks_update') }}" class="card form-inline">
-      <select name="subject" required>
-        <option value="">-- Subject --</option>
-        {% for s in data.keys() %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
-      </select>
-      <select name="username" required>
-        <option value="">-- Student --</option>
-        {% for st in students %}<option value="{{ st['username'] }}">{{ st['username'] }} · {{ st['name'] }}</option>{% endfor %}
-      </select>
-      <select name="exam" required>
-        <option value="MID1">MID 1</option>
-        <option value="MID2">MID 2</option>
-      </select>
-      <input type="number" name="marks" placeholder="Marks (0-30)" min="0" max="30" required class="input num">
-      <input type="number" name="max_marks" value="30" min="1" required class="input num">
-      <button class="btn btn-solid" type="submit">Add / Update</button>
-    </form>
+    <div class="card">
+      <h3>Enter / Update Marks</h3>
+      <form method="POST" action="{{ url_for('fac_marks_update') }}" class="form-inline">
+        <select name="subject" required>
+          <option value="">-- Subject --</option>
+          {% for s in subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+        </select>
+        <select name="username" required>
+          <option value="">-- Student --</option>
+          {% for st in students %}<option value="{{ st['username'] }}">{{ st['username'] }} · {{ st['name'] }}</option>{% endfor %}
+        </select>
+        <select name="exam" required>
+          <option value="MID1">MID 1</option>
+          <option value="MID2">MID 2</option>
+        </select>
+        <input type="number" name="exam_marks" placeholder="Exam /25" min="0" max="25" required class="input num">
+        <input type="number" name="assign_marks" placeholder="Assignment /5" min="0" max="5" required class="input num">
+        <button class="btn btn-solid" type="submit">Save</button>
+      </form>
+    </div>
 
+    {% if data %}
     <div class="marks-cards">
       {% for subj, students_data in data.items() %}
       <div class="card marks-subject-card">
@@ -37,21 +41,27 @@
         <div class="table-scroll">
           <table class="grid-table marks-table">
             <thead>
-              <tr><th>Roll No</th><th>Name</th><th>MID 1</th><th>MID 2</th><th>Best</th></tr>
+              <tr><th>Roll No</th><th>Name</th><th>MID 1 (Exam/A)</th><th>MID 2 (Exam/A)</th><th>Best /30</th></tr>
             </thead>
             <tbody>
               {% for st in students %}
               {% set sd = students_data.get(st['username'], {}) %}
               {% set m1 = sd.get('MID1') %}
               {% set m2 = sd.get('MID2') %}
-              {% set v1 = m1['marks'] if m1 else '-' %}
-              {% set v2 = m2['marks'] if m2 else '-' %}
-              {% set best = [m1['marks'] if m1 else 0, m2['marks'] if m2 else 0] | max %}
+              {% set t1 = (m1['exam_marks'] + m1['assign_marks']) if m1 else 0 %}
+              {% set t2 = (m2['exam_marks'] + m2['assign_marks']) if m2 else 0 %}
+              {% set best = [t1, t2] | max %}
               <tr>
                 <td>{{ st['username'] }}</td>
                 <td>{{ st['name'] }}</td>
-                <td>{{ v1 }}{% if m1 %}<small class="muted">/{{ m1['max_marks'] }}</small>{% endif %}</td>
-                <td>{{ v2 }}{% if m2 %}<small class="muted">/{{ m2['max_marks'] }}</small>{% endif %}</td>
+                <td>
+                  {% if m1 %}{{ m1['exam_marks'] }}/25 <small class="muted">+{{ m1['assign_marks'] }}/5</small>
+                  {% else %}<span class="empty">—</span>{% endif %}
+                </td>
+                <td>
+                  {% if m2 %}{{ m2['exam_marks'] }}/25 <small class="muted">+{{ m2['assign_marks'] }}/5</small>
+                  {% else %}<span class="empty">—</span>{% endif %}
+                </td>
                 <td><strong>{{ best if m1 or m2 else '-' }}</strong></td>
               </tr>
               {% endfor %}
@@ -61,6 +71,9 @@
       </div>
       {% endfor %}
     </div>
+    {% else %}
+    <div class="card"><p class="muted">No marks entered yet. Use the form above to add the first entry.</p></div>
+    {% endif %}
   </div>
 </section>
 {% endblock %}

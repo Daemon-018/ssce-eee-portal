@@ -66,7 +66,9 @@ CREATE TABLE IF NOT EXISTS marks (
     username TEXT NOT NULL,
     subject TEXT NOT NULL,
     exam TEXT NOT NULL CHECK(exam IN ('MID1','MID2')),
-    marks INTEGER NOT NULL,
+    exam_marks INTEGER NOT NULL DEFAULT 0,
+    assign_marks INTEGER NOT NULL DEFAULT 0,
+    marks INTEGER DEFAULT 0,
     max_marks INTEGER DEFAULT 30,
     updated_at TEXT DEFAULT (datetime('now','localtime')),
     UNIQUE(username, subject, exam)

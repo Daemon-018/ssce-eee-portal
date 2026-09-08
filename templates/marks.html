@@ -4,7 +4,13 @@
 <section class="page-section">
   <div class="container">
     <h1>My Marks</h1>
-    <p class="muted">Mid Semester Exams (3-1, max 30) · 2nd Yr 2nd Sem Result (JNTUGV R23, grade points /10)</p>
+    <p class="muted">Mid Semester Exams (3-1) · Exam <strong>/25</strong> + Assignment <strong>/5</strong></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
 
     <div class="table-scroll">
       <table class="grid-table marks-table">
@@ -18,48 +24,27 @@
           </tr>
         </thead>
         <tbody>
-          {% set ns = namespace(has_result_rows=false) %}
           {% for subj, exams in subj_map.items() %}
-            {# 2-2 per-subject grade rows: show RESULT grade point #}
-            {% if subj.startswith('2-2 | R2') %}
-              {% set ns.has_result_rows = true %}
-              {% set row = exams.get('RESULT') %}
-              <tr class="result-row">
-                <td class="day-col">{{ subj }}</td>
-                <td colspan="2" class="muted">2nd Yr 2nd Sem Result</td>
-                <td><strong>{{ row['marks'] }}</strong><small class="muted"> /10</small></td>
-                <td>
-                  {% if row and row['marks'] >= 8 %}<span class="role-badge professor">Distinction</span>
-                  {% elif row and row['marks'] >= 6 %}<span class="role-badge associate">Pass</span>
-                  {% elif row and row['marks'] >= 4 %}<span class="role-badge asst">Pass</span>
-                  {% else %}<span class="role-badge bad">Fail</span>{% endif %}
-                </td>
-              </tr>
-            {# 2-2 summary row: SGPA + pass/fail #}
-            {% elif subj.startswith('2-2 |') %}
-              {% set ns.has_result_rows = true %}
-              {% set row = exams.get('RESULT') %}
-              <tr class="result-row">
-                <td class="day-col">{{ subj }}</td>
-                <td colspan="2" class="muted">2nd Yr 2nd Sem Overall</td>
-                <td><strong>{{ (row['marks'] / 100) | round(2) }}</strong><small class="muted"> /10 SGPA</small></td>
-                <td>
-                  {% if 'PASS' in subj.upper() %}<span class="role-badge professor">Pass</span>
-                  {% elif 'FAIL' in subj.upper() %}<span class="role-badge bad">Fail — see backlog tracker</span>
-                  {% else %}<span class="role-badge associate">Result</span>{% endif %}
-                </td>
-              </tr>
-            {% else %}
           {% set m1 = exams.get('MID1') %}
           {% set m2 = exams.get('MID2') %}
-          {% set v1 = m1['marks'] if m1 else 0 %}
-          {% set v2 = m2['marks'] if m2 else 0 %}
-          {% set best = [v1, v2] | max %}
+          {% set t1 = (m1['exam_marks'] + m1['assign_marks']) if m1 else 0 %}
+          {% set t2 = (m2['exam_marks'] + m2['assign_marks']) if m2 else 0 %}
+          {% set best = [t1, t2] | max %}
           <tr>
             <td class="day-col">{{ subj }}</td>
-            <td>{{ v1 }}{% if m1 %}<small class="muted"> /{{ m1['max_marks'] }}</small>{% endif %}</td>
-            <td>{{ v2 }}{% if m2 %}<small class="muted"> /{{ m2['max_marks'] }}</small>{% endif %}</td>
-            <td><strong>{{ best }}</strong></td>
+            <td>
+              {% if m1 %}
+                <strong>{{ m1['exam_marks'] }}/25</strong>
+                <br><small class="muted">A: {{ m1['assign_marks'] }}/5</small>
+              {% else %}<span class="empty">—</span>{% endif %}
+            </td>
+            <td>
+              {% if m2 %}
+                <strong>{{ m2['exam_marks'] }}/25</strong>
+                <br><small class="muted">A: {{ m2['assign_marks'] }}/5</small>
+              {% else %}<span class="empty">—</span>{% endif %}
+            </td>
+            <td><strong>{{ best }}/30</strong></td>
             <td>
               {% if best >= 24 %}<span class="role-badge professor">Excellent</span>
               {% elif best >= 20 %}<span class="role-badge associate">Good</span>
@@ -67,13 +52,13 @@
               {% else %}<span class="role-badge bad">Needs Improvement</span>{% endif %}
             </td>
           </tr>
-            {% endif %}
+          {% else %}
+          <tr><td colspan="5" class="muted center">No marks entered yet. Faculty will publish mid marks here.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
-    {% if not ns.has_result_rows %}<p class="muted" style="margin-top:14px">No 2-2 result data yet.</p>{% endif %}
     <p class="muted" style="margin-top:14px">Note: Internal marks are finalised by the faculty. Contact subject faculty for any discrepancy.</p>
   </div>
 </section>
