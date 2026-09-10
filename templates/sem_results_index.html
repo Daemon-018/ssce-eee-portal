@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Semester Results{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>Semester Results</h1>
+    <p class="muted">Select a semester to view university exam results</p>
+
+    <div class="dash-grid" style="margin-top:20px">
+      {% for sem in show_sems %}
+      <a class="card dash-card" href="{{ url_for('sem_results', sem=sem) }}">
+        <h3>{{ sem }}</h3>
+        <p>{{ sem_labels[sem] }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

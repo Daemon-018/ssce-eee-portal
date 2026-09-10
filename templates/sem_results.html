@@ -3,6 +3,7 @@
 {% block content %}
 <section class="page-section">
   <div class="container wide">
+    <p style="margin-bottom:8px"><a href="{{ url_for('sem_results_index') }}" style="color:#58a6ff">← Back to Sem Results</a></p>
     <h1>{{ sem_label }} — University Results</h1>
     <p class="muted">
       {% if role == 'student' %}

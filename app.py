@@ -970,6 +970,22 @@ SEM_LABELS = {
 }
 
 
+@app.route("/results")
+@login_required()
+def sem_results_index():
+    role = session.get("role")
+    entry = ""
+    if role == "student":
+        db = get_db_conn()
+        me = db.execute("SELECT entry FROM users WHERE username=?",
+                        (session.get("username"),)).fetchone()
+        entry = me["entry"] if me and me["entry"] else "regular"
+    # LE students skip 1-1 and 1-2
+    show_sems = [s for s in VALID_SEMS if entry != "le" or s not in ("1-1", "1-2")]
+    return render_template("sem_results_index.html", show_sems=show_sems,
+                           sem_labels=SEM_LABELS, role=role)
+
+
 @app.route("/results/<sem>")
 @login_required()
 def sem_results(sem):
