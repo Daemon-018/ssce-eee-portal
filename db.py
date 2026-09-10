@@ -183,6 +183,28 @@ CREATE TABLE IF NOT EXISTS syllabus_tracker (
     updated_by TEXT DEFAULT ''
 );
 
+-- ============ v5: semester results (university exam data from Excel) ============
+
+CREATE TABLE IF NOT EXISTS sem_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,                -- student roll number
+    year_sem TEXT NOT NULL,                -- '1-1', '1-2', etc.
+    subject TEXT NOT NULL,
+    code TEXT DEFAULT '',                  -- e.g. R231101
+    grade TEXT DEFAULT '',                 -- A/B/C/D/F
+    grade_point INTEGER DEFAULT 0,
+    credit INTEGER DEFAULT 0,
+    credit_status TEXT DEFAULT '',         -- Pass/Fail
+    exam_cycle INTEGER DEFAULT 1,         -- 1=regular, 2=1st supply, 3=2nd supply, 4=3rd supply
+    exam_label TEXT DEFAULT '',            -- e.g. 'DEC 2024', 'JUN 2025'
+    sgpa REAL DEFAULT 0,
+    total_credits INTEGER DEFAULT 0,
+    total_appeared INTEGER DEFAULT 0,
+    total_passed INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(username, year_sem, subject, exam_cycle)
+);
+
 -- ============ v4: faculty profiles ============
 
 CREATE TABLE IF NOT EXISTS faculty_profiles (

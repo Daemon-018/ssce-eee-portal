@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}{{ sem_label }} Results{% endblock %}
+{% block content %}
+<section class="page-section">
+  <div class="container wide">
+    <h1>{{ sem_label }} — University Results</h1>
+    <p class="muted">
+      {% if role == 'student' %}
+        Your semester results with supply attempt history
+      {% elif my_user %}
+        {{ student_name }} ({{ my_user }}) — {{ sem }} results
+      {% else %}
+        All students — {{ sem }} results overview
+      {% endif %}
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {# ---- Faculty: student picker ---- #}
+    {% if role == 'faculty' %}
+    <div class="card" style="margin-bottom:14px">
+      <form method="get" class="form-inline">
+        <label>Student:
+        <select name="student" onchange="this.form.submit()">
+          <option value="">-- Select student --</option>
+          {% for s in all_students %}
+          <option value="{{ s['username'] }}" {{ 'selected' if s['username'] == my_user }}>{{ s['name'] }} ({{ s['username'] }})</option>
+          {% endfor %}
+        </select>
+        </label>
+      </form>
+    </div>
+    {% endif %}
+
+    {# ---- No data yet ---- #}
+    {% if not cycles %}
+    <div class="card" style="text-align:center;padding:40px">
+      <h3 style="color:#8b949e">No results data yet</h3>
+      <p class="muted">Results for {{ sem }} haven't been uploaded yet.</p>
+    </div>
+    {% endif %}
+
+    {# ---- Student view: cycle cards ---- #}
+    {% if my_user and cycles %}
+    <div class="card" style="margin-bottom:14px">
+      <h3>{{ student_name }} — {{ my_user }}</h3>
+    </div>
+
+    {% for c_num in cycles|sort %}
+    {% set c = cycles[c_num] %}
+    <div class="card" style="margin-bottom:14px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#1c2129;border-bottom:1px solid #21262d">
+        <h3 style="color:#f0f6fc;margin:0">{{ c['label'] }}</h3>
+        {% if c_num == 1 %}
+        <span style="background:#1f6feb33;color:#58a6ff;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:600">Regular</span>
+        {% else %}
+        <span style="background:#da363433;color:#f85149;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:600">{{ c_num - 1 }}{{ 'st' if c_num == 2 else ('nd' if c_num == 3 else 'rd') }} Supply</span>
+        {% endif %}
+      </div>
+      <div style="display:flex;gap:20px;padding:10px 16px;border-bottom:1px solid #21262d;font-size:0.85rem;color:#8b949e">
+        <span>SGPA: <strong style="color:#58a6ff">{{ '%.1f'|format(c['sgpa']) }}</strong></span>
+        <span>Credits: <strong>{{ c['total_credit'] }}</strong></span>
+        <span>Appeared: <strong>{{ c['total_appeared'] }}</strong></span>
+        <span>Passed: <strong>{{ c['total_passed'] }}</strong></span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+        <thead>
+          <tr style="border-bottom:1px solid #21262d">
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">#</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">Subject</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">Code</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">Grade</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">GP</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">Credits</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in c['subjects'] %}
+          <tr style="border-bottom:1px solid #161b22">
+            <td style="padding:8px 12px">{{ loop.index }}</td>
+            <td style="padding:8px 12px">{{ s['subject'] }}</td>
+            <td style="padding:8px 12px;color:#8b949e">{{ s['code'] }}</td>
+            <td style="padding:8px 12px;text-align:center;font-weight:700;color:{% if s['grade'] == 'S' %}#58a6ff{% elif s['grade'] == 'A' %}#3fb950{% elif s['grade'] == 'B' %}#d2a8ff{% elif s['grade'] == 'C' %}#d29922{% elif s['grade'] == 'D' %}#e3b341{% else %}#f85149{% endif %}">{{ s['grade'] }}</td>
+            <td style="padding:8px 12px;text-align:center">{{ s['grade_point'] }}</td>
+            <td style="padding:8px 12px;text-align:center">{{ s['credit'] }}</td>
+            <td style="padding:8px 12px;text-align:center;color:{% if s['credit_status'] == 'Pass' %}#3fb950{% else %}#f85149{% endif %};font-weight:600">
+              {% if s['credit_status'] == 'Pass' %}✓ Pass{% else %}✗ Fail{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+
+    {# ---- Subject summary: supply attempt history ---- #}
+    {% if subject_summary %}
+    <div class="card" style="margin-bottom:14px;overflow:hidden">
+      <div style="padding:12px 16px;background:#1c2129;border-bottom:1px solid #21262d">
+        <h3 style="color:#f0f6fc;margin:0">Subject-wise Status</h3>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+        <thead>
+          <tr style="border-bottom:1px solid #21262d">
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">Subject</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">Code</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">Attempts</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e;font-weight:500">Final</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e;font-weight:500">History</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for subj, info in subject_summary.items() %}
+          <tr style="border-bottom:1px solid #161b22">
+            <td style="padding:8px 12px">{{ subj }}</td>
+            <td style="padding:8px 12px;color:#8b949e">{{ info['code'] }}</td>
+            <td style="padding:8px 12px;text-align:center">{{ info['attempts']|length }}</td>
+            <td style="padding:8px 12px;text-align:center;font-weight:600;color:{% if info['status'] == 'Pass' %}#3fb950{% else %}#f85149{% endif %}">
+              {% if info['status'] == 'Pass' %}✓ Pass{% else %}✗ Fail{% endif %}
+            </td>
+            <td style="padding:8px 12px;font-size:0.8rem">
+              {% for a in info['attempts'] %}
+              <span style="display:inline-block;margin-right:6px;padding:2px 6px;border-radius:4px;background:{% if a['status'] == 'Pass' %}#3fb95022{% else %}#f8514922{% endif %};color:{% if a['status'] == 'Pass' %}#3fb950{% else %}#f85149{% endif %}">
+                {{ a['label'] }}: {{ a['grade'] }}
+              </span>
+              {% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# ---- Summary stats ---- #}
+    <div class="card" style="display:flex;gap:24px;padding:16px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <strong style="font-size:1.4rem;color:#58a6ff">{{ total_subjects }}</strong>
+        <span style="display:block;font-size:0.75rem;color:#8b949e">Total Subjects</span>
+      </div>
+      <div style="text-align:center">
+        <strong style="font-size:1.4rem;color:#3fb950">{{ cleared }}</strong>
+        <span style="display:block;font-size:0.75rem;color:#8b949e">Cleared</span>
+      </div>
+      <div style="text-align:center">
+        <strong style="font-size:1.4rem;color:#f85149">{{ backlogs }}</strong>
+        <span style="display:block;font-size:0.75rem;color:#8b949e">Backlogs</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end my_user and cycles #}
+
+    {# ---- Faculty overview: all students grid ---- #}
+    {% if role == 'faculty' and not my_user and students_with_data %}
+    <div class="card" style="overflow:hidden">
+      <div style="padding:12px 16px;background:#1c2129;border-bottom:1px solid #21262d">
+        <h3 style="color:#f0f6fc;margin:0">{{ students_with_data|length }} students have {{ sem }} data</h3>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+        <thead>
+          <tr style="border-bottom:1px solid #21262d">
+            <th style="text-align:left;padding:8px 12px;color:#8b949e">#</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e">Roll</th>
+            <th style="text-align:center;padding:8px 12px;color:#8b949e">Cycles</th>
+            <th style="text-align:left;padding:8px 12px;color:#8b949e">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in students_with_data %}
+          <tr style="border-bottom:1px solid #161b22">
+            <td style="padding:8px 12px">{{ loop.index }}</td>
+            <td style="padding:8px 12px">{{ s['username'] }}</td>
+            <td style="padding:8px 12px;text-align:center">
+              {# count how many cycles this student has #}
+              {% set ns = namespace(cnt=0) %}
+              {% for c_num, c in cycles.items() %}
+                {% for subj in c['subjects'] %}
+                  {% if subj['username'] == s['username'] %}
+                    {% set ns.cnt = ns.cnt + 1 %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+              —
+            </td>
+            <td style="padding:8px 12px">
+              <a href="{{ url_for('sem_results', sem=sem, student=s['username']) }}" style="color:#58a6ff">View →</a>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

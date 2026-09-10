@@ -17,6 +17,32 @@
       <a class="card dash-card" href="{{ url_for('marks') }}">
         <h3>My Marks</h3><p>Mid-sem marks (3-1) + previous semester results.</p>
       </a>
+      {% if entry != 'le' %}
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='1-1') }}">
+        <h3>1-1 Results</h3><p>1st Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='1-2') }}">
+        <h3>1-2 Results</h3><p>1st Year 2nd Sem — university exam results.</p>
+      </a>
+      {% endif %}
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='2-1') }}">
+        <h3>2-1 Results</h3><p>2nd Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='2-2') }}">
+        <h3>2-2 Results</h3><p>2nd Year 2nd Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='3-1') }}">
+        <h3>3-1 Results</h3><p>3rd Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='3-2') }}">
+        <h3>3-2 Results</h3><p>3rd Year 2nd Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='4-1') }}">
+        <h3>4-1 Results</h3><p>4th Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='4-2') }}">
+        <h3>4-2 Results</h3><p>4th Year 2nd Sem — university exam results.</p>
+      </a>
       <a class="card dash-card" href="{{ url_for('profile') }}">
         <h3>My Profile</h3><p>View roll number, section, batch and CGPA.</p>
       </a>
@@ -80,6 +106,30 @@
       </a>
       <a class="card dash-card" href="{{ url_for('fac_performance') }}">
         <h3>Performance Analysis</h3><p>Pass / fail, strengths &amp; weaknesses per student.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='1-1') }}">
+        <h3>1-1 Results</h3><p>View all students' university exam results — 1st Year 1st Sem.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='1-2') }}">
+        <h3>1-2 Results</h3><p>1st Year 2nd Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='2-1') }}">
+        <h3>2-1 Results</h3><p>2nd Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='2-2') }}">
+        <h3>2-2 Results</h3><p>2nd Year 2nd Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='3-1') }}">
+        <h3>3-1 Results</h3><p>3rd Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='3-2') }}">
+        <h3>3-2 Results</h3><p>3rd Year 2nd Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='4-1') }}">
+        <h3>4-1 Results</h3><p>4th Year 1st Sem — university exam results.</p>
+      </a>
+      <a class="card dash-card" href="{{ url_for('sem_results', sem='4-2') }}">
+        <h3>4-2 Results</h3><p>4th Year 2nd Sem — university exam results.</p>
       </a>
       <a class="card dash-card" href="{{ url_for('fac_syllabus_tracker') }}">
         <h3>Syllabus Tracker</h3><p>Unit-wise coverage status of every subject.</p>

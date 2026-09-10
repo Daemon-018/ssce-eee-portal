@@ -175,7 +175,12 @@ def do_login():
 @login_required()
 def dashboard():
     role = session["role"]
-    return render_template("dashboard.html", role=role)
+    entry = ""
+    if role == "student":
+        db = get_db_conn()
+        me = db.execute("SELECT entry FROM users WHERE username=?", (session.get("username"),)).fetchone()
+        entry = me["entry"] if me and me["entry"] else "regular"
+    return render_template("dashboard.html", role=role, entry=entry)
 
 
 # ---------------- portal pages (student + faculty) ----------------
@@ -952,6 +957,117 @@ def fac_performance():
     analysis = _analysis_for_student(db, sel) if sel else None
     return render_template("fac_performance.html", students=students, sel=sel,
                            analysis=analysis)
+
+
+# ============ Semester Results ============
+
+VALID_SEMS = ["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"]
+SEM_LABELS = {
+    "1-1": "1st Year — 1st Sem", "1-2": "1st Year — 2nd Sem",
+    "2-1": "2nd Year — 1st Sem", "2-2": "2nd Year — 2nd Sem",
+    "3-1": "3rd Year — 1st Sem", "3-2": "3rd Year — 2nd Sem",
+    "4-1": "4th Year — 1st Sem", "4-2": "4th Year — 2nd Sem",
+}
+
+
+@app.route("/results/<sem>")
+@login_required()
+def sem_results(sem):
+    if sem not in VALID_SEMS:
+        abort(404)
+    db = get_db_conn()
+    role = session.get("role")
+    username = session.get("username")
+
+    if role == "student":
+        my_user = username
+    else:
+        # faculty: pick student from query or show all
+        my_user = request.args.get("student", "").strip()
+
+    # fetch all cycles for this sem
+    if my_user:
+        rows = db.execute(
+            """SELECT * FROM sem_results
+               WHERE year_sem=? AND username=?
+               ORDER BY exam_cycle, subject""",
+            (sem, my_user),
+        ).fetchall()
+        student_name_row = db.execute(
+            "SELECT name FROM users WHERE username=?", (my_user,)
+        ).fetchone()
+        student_name = student_name_row["name"] if student_name_row else my_user
+    else:
+        rows = db.execute(
+            """SELECT * FROM sem_results
+               WHERE year_sem=?
+               ORDER BY username, exam_cycle, subject""",
+            (sem,),
+        ).fetchall()
+        student_name = ""
+
+    # group by exam cycle
+    cycles = {}
+    for r in rows:
+        c = r["exam_cycle"]
+        if c not in cycles:
+            cycles[c] = {
+                "label": r["exam_label"], "sgpa": r["sgpa"],
+                "total_credit": r["total_credits"],
+                "total_appeared": r["total_appeared"],
+                "total_passed": r["total_passed"],
+                "subjects": [],
+            }
+        cycles[c]["subjects"].append(r)
+
+    # if faculty with no student selected: get all students with data this sem
+    students_with_data = []
+    if role == "faculty" and not my_user:
+        students_with_data = db.execute(
+            """SELECT DISTINCT username FROM sem_results WHERE year_sem=?
+               ORDER BY username""", (sem,),
+        ).fetchall()
+
+    # all students list for faculty dropdown
+    all_students = []
+    if role == "faculty":
+        all_students = db.execute(
+            "SELECT username,name FROM users WHERE role='student' ORDER BY username"
+        ).fetchall()
+
+    # subject summary: latest status across cycles
+    subject_summary = {}
+    for c_num in sorted(cycles.keys()):
+        for s in cycles[c_num]["subjects"]:
+            subj = s["subject"]
+            if subj not in subject_summary:
+                subject_summary[subj] = {
+                    "code": s["code"], "status": s["credit_status"],
+                    "last_cycle": c_num, "last_label": s["exam_label"],
+                    "attempts": [],
+                }
+            subject_summary[subj]["attempts"].append({
+                "cycle": c_num, "label": s["exam_label"],
+                "grade": s["grade"], "gp": s["grade_point"],
+                "credit": s["credit"], "status": s["credit_status"],
+            })
+            if s["credit_status"] == "Pass":
+                subject_summary[subj]["status"] = "Pass"
+                subject_summary[subj]["last_cycle"] = c_num
+                subject_summary[subj]["last_label"] = s["exam_label"]
+
+    backlogs = sum(1 for v in subject_summary.values() if v["status"] != "Pass")
+    cleared = sum(1 for v in subject_summary.values() if v["status"] == "Pass")
+
+    return render_template(
+        "sem_results.html", sem=sem, sem_label=SEM_LABELS[sem],
+        cycles=cycles, student_name=student_name, my_user=my_user,
+        role=role, all_students=all_students,
+        students_with_data=students_with_data,
+        subject_summary=subject_summary,
+        backlogs=backlogs, cleared=cleared,
+        total_subjects=len(subject_summary),
+    )
 
 
 @app.route("/faculty/extra-classes", methods=["GET", "POST"])
