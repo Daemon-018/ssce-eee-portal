@@ -18,6 +18,7 @@
     {% endwith %}
 
     <form method="POST" action="{{ url_for('do_login') }}" autocomplete="off">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="role" value="{{ role }}">
       <label>Username</label>
       <input class="input" type="text" name="username" placeholder="{{ 'Roll number (e.g. 24W61A0201)' if role=='student' else 'Faculty ID' }}" required autofocus>

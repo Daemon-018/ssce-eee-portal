@@ -1,0 +1,301 @@
+============================================================================
+  CODEBASE REVIEW: SSCE EEE Department Flask Portal
+  Date: 2026-09-08
+============================================================================
+
+============================================================================
+1. ARCHITECTURE & CODE QUALITY
+============================================================================
+
+STRENGTHS:
+- Impressive feature breadth: 20+ modules (marks, attendance, syllabus,
+  mentorship, resume builder, leave system, careers, etc.)
+- Good use of Werkzeug password hashing (db.py:294)
+- Role-based access control decorator is cleanly written (app.py:49-61)
+- Dark theme design system with CSS custom properties is well-structured
+  (style.css:7-18)
+- Dashboard card grid gives quick access to every feature
+
+ISSUES:
+
+a) Monolith:
+   All 1102 routes live in a single app.py. No blueprints, no models,
+   no services layer. Every route mixes DB access, business logic, and
+   template rendering.
+
+b) Dual schema definition:
+   The DB schema is defined in db.py:9-215 (SCHEMA) AND
+   seed_data.py:12-221 (SCHEMA dict). These must be kept in sync
+   manually -- a recipe for drift.
+
+c) Inline imports scattered everywhere:
+   - from werkzeug.security import check_password_hash at app.py:97
+   - import re at app.py:413
+   - __import__("datetime") at app.py:927
+   These indicate the file grew organically without cleanup.
+
+d) Hardcoded semester "3-1":
+   Appears in at least 6 places (app.py:129, 154, 278, 304, 344, 400,
+   538). Every student beyond 3-1 gets wrong data. app.py:538 has
+   _subject_filter_kw() returning hardcoded year_sem='3-1' -- it is
+   defined but never used.
+
+e) No tests:
+   Zero test files. Not even a smoke test.
+
+f) Startup-time DB operations:
+   app.py:18-33 runs init_db(), seed_users(), seed_faculty(), and
+   conditionally build_db() at module import time. If the DB is empty,
+   it drops and recreates everything on every deploy. This runs at
+   import time, not inside a Flask lifecycle hook.
+
+g) Lazy table creation:
+   _ensure_leaves_gallery() (db.py:246) creates leaves and gallery
+   tables but is only called from seed_users(). If seeding does not
+   run, these tables do not exist.
+
+
+============================================================================
+2. UI/UX
+============================================================================
+
+WHAT LOOKS GOOD:
+- Professional dark theme with "substation navy + amber" branding --
+  on-theme for electrical engineering
+- 3D card hover effects on faculty cards (style.css:378-428) are polished
+- Responsive hamburger menu (base.html:47, style.css:47)
+- Consistent visual language: amber for primary CTAs, blue for secondary,
+  role-based badges
+- Hero section with AC waveform SVG divider is a nice thematic touch
+  (home.html:35-38)
+- Dashboard is comprehensive -- students see 18 cards, faculty see 12
+
+WHAT COULD BE BETTER:
+
+a) Dashboard overload:
+   18 student cards and 12 faculty cards with no grouping, no search,
+   no priority ordering. Students will never find "Notices" among
+   18 equally-sized cards.
+
+b) No breadcrumb navigation:
+   Deep pages (syllabus, marks) have no back-navigation context.
+
+c) Tables do not scroll well on mobile:
+   Faculty attendance/mark tables load ALL students x ALL subjects.
+   With 50+ students and 6 subjects, this is a huge horizontal scroll
+   on phones.
+
+d) No loading states or error pages:
+   404 is minimal; no 500 handler.
+
+e) Flash messages are duplicated:
+   Rendered in base.html:52-60 AND re-rendered manually in individual
+   templates like login.html:12-18, marks.html:9-13, fac_marks.html:9-13.
+   This causes double-rendering of flash messages.
+
+f) No visual feedback on attendance percentage:
+   fac_attendance.html:46 computes percentage but has no color coding --
+   contrast with CSS classes .ok/.bad that exist but are not applied.
+
+g) Admin editor (admin_edit.html) is a bare textarea with no syntax
+   highlighting, line numbers, or undo.
+
+
+============================================================================
+3. SECURITY
+============================================================================
+
+CRITICAL:
+
+1) Hardcoded secret key (app.py:14):
+   app.secret_key = "ssce-eee-dev-key-change-me"
+   Anyone who reads the source can forge session cookies and impersonate
+   any user, including admin. This is the single most dangerous issue.
+
+2) No CSRF protection at all:
+   Zero CSRF tokens in any POST form. All 13+ POST endpoints
+   (do_login, fac_attendance_update, fac_marks_update,
+   fac_timetable_update, fac_assignments_upload, apply_leave,
+   faculty_manage, faculty_delete, change_password, etc.) are vulnerable
+   to cross-site request forgery.
+
+3) Admin arbitrary file write (app.py:506-532):
+   The admin_edit_file route writes arbitrary content to files on disk.
+   The path traversal check at line 516 is:
+     if not full_path.startswith(root)
+   but root is a hardcoded Termux path (/data/data/com.termux/files/home/
+   eee_site) that will not match on a Linux server. A filepath like
+   "../../../etc/cron.d/evil" could bypass this. No restriction on file
+   type (could write .py, .sh, etc.)
+
+4) Password change form field mismatch:
+   change_password.html sends old_password, new_password,
+   confirm_password but app.py:795-797 reads current, new, confirm.
+   PASSWORD CHANGES SILENTLY FAIL -- the current password check will
+   always fail because cur is always empty.
+
+HIGH:
+
+5) XSS via flash messages:
+   Flask's flash() creates Markup objects (HTML-safe), but content is
+   user-influenced. In app.py:110:
+     flash(f"Welcome back, {user['name']}!")
+   If a user's name contains <script>, it could execute. Jinja2's
+   {{ msg }} auto-escapes strings but NOT Markup objects.
+
+6) No rate limiting on login (app.py:81-111):
+   No brute-force protection. An attacker can try unlimited passwords.
+
+7) All faculty passwords are "faculty123" (db.py:270):
+   Every faculty account shares the same trivial password, and it is
+   committed to source control.
+
+8) SESSION_COOKIE_SECURE not set (app.py:15):
+   Session cookies will be sent over plain HTTP, enabling session
+   hijacking on non-TLS connections.
+
+9) No authorization checks on data access:
+   Faculty can edit/delete ANY student's marks, attendance, or any
+   faculty profile. There is no ownership verification --
+   app.py:239-267 lets any faculty update any student's attendance.
+
+10) File upload without size limits (app.py:1041-1068):
+    No MAX_CONTENT_LENGTH configured. A user could upload a multi-GB
+    file and exhaust disk.
+
+
+============================================================================
+4. PERFORMANCE
+============================================================================
+
+a) No database indexes:
+   The users table has no index on username (used in every query), role
+   (used for filtering students), or year. marks has no index on
+   username+subject. attendance has no index on username. For ~50
+   students this is fine; scale to 500 and it degrades.
+
+b) N+1 in syllabus route (app.py:164-165):
+   Executes SELECT COUNT(*) for every semester to check if syllabus
+   data exists -- 8 queries just to build a semester list.
+
+c) Loading all records:
+   fac_attendance (app.py:224-231) loads ALL students and ALL
+   attendance records into Python memory, then builds a dict. Same
+   pattern in fac_marks (app.py:339-353). No pagination anywhere.
+
+d) _analysis_for_student (app.py:827-867):
+   Runs 3 separate queries (marks, attendance, syllabus) plus a 4th
+   conditional query. The syllabus check hits sqlite_master every time.
+
+e) Repeated DB connections on startup (app.py:18-33):
+   init_db(), seed_users(), seed_faculty() each open and close their
+   own connection. Then get_db() opens another to check marks count.
+   Then build_db() and init_db() and seed_users() run again -- 6+
+   connections during startup.
+
+f) _faculty_rows() called multiple times per request:
+   On the home page it is called once, but faculty_detail at app.py:661
+   calls _faculty_rows() which loads ALL faculty to find one by slug --
+   an O(n) lookup instead of a direct query.
+
+g) No caching:
+   Faculty profiles, syllabus, and study materials are re-queried from
+   DB on every page load with no caching layer.
+
+
+============================================================================
+5. MISSING FEATURES (for a College EEE Dept Site)
+============================================================================
+
+- Public notice board: Notices require login -- parents and outsiders
+  cannot see department announcements.
+- Placement statistics: No placement record (companies visited,
+  packages, students placed).
+- Student self-registration or forgot-password flow: Students must
+  contact the office; no self-service password recovery.
+- Attendance percentage for students: The student attendance page shows
+  raw data but the overall % computation in the template can crash with
+  division-by-zero (fac_attendance.html:46: rec[0]/rec[1] when rec[1]
+  is 0).
+- Grade/SPI/CGPA computation: Marks exist but there is no semester GPA
+  calculation from mid marks + semester-end results.
+- Lab records / viva management: EEE has heavy lab components; no lab
+  record tracking.
+- Event photos / gallery management: Gallery table exists but
+  ROWS["gallery"] is empty and there is no upload route.
+- Internal assessment (sessional) marks: Only MID-1/MID-2 exist; no
+  assignment, quiz, or lab internal tracking.
+- Hall ticket eligibility check: No attendance-based eligibility
+  computation.
+- Parent portal or guardian access.
+- Department achievements / NAAC / NBA documentation.
+- Research publications tracker for faculty.
+- Alumni network or placement coordinator contacts.
+- Student feedback / course evaluation forms.
+
+
+============================================================================
+6. TOP 5 IMPROVEMENTS (Ranked by Impact vs Effort)
+============================================================================
+
+Rank | Improvement                         | Impact  | Effort      | Details
+-----|-------------------------------------|---------|-------------|----------------------------------
+  1  | Add CSRF protection                 | Critical| ~1 hour     | Install flask-wtf, add
+     |                                     |         |             | CSRFProtect(app), add
+     |                                     |         |             | {{ csrf_token() }} to all 13+
+     |                                     |         |             | POST forms. Prevents all CSRF
+     |                                     |         |             | attacks. Single highest-ROI
+     |                                     |         |             | security fix.
+-----|-------------------------------------|---------|-------------|----------------------------------
+  2  | Move secret_key to env var          | Critical| ~15 min     | Replace app.py:14 with
+     |                                     |         |             | os.environ.get("SECRET_KEY").
+     |                                     |         |             | Without this, every session
+     |                                     |         |             | can be forged. One line, blocks
+     |                                     |         |             | session hijacking.
+-----|-------------------------------------|---------|-------------|----------------------------------
+  3  | Fix password change bug + add       | High    | ~30 min     | Fix field name mismatch in
+     | login rate limiting                 |         |             | change_password (app.py:795-797
+     |                                     |         |             | should read current/new/confirm
+     |                                     |         |             | matching the template, or fix
+     |                                     |         |             | the template). Add flask-limiter
+     |                                     |         |             | to /auth/login -- 5 attempts/min.
+-----|-------------------------------------|---------|-------------|----------------------------------
+  4  | Refactor to Flask Blueprints +      | High    | ~4-6 hours  | Split app.py into views/auth.py,
+     | add DB indexes                      |         |             | views/faculty.py,
+     |                                     |         |             | views/student.py, etc. Add
+     |                                     |         |             | indexes: CREATE INDEX
+     |                                     |         |             | idx_users_username ON
+     |                                     |         |             | users(username), CREATE INDEX
+     |                                     |         |             | idx_marks_user ON
+     |                                     |         |             | marks(username,subject), CREATE
+     |                                     |         |             | INDEX idx_attendance_user ON
+     |                                     |         |             | attendance(username). Improves
+     |                                     |         |             | maintainability and query speed.
+-----|-------------------------------------|---------|-------------|----------------------------------
+  5  | Add pagination + college-wide       | Medium  | ~3-4 hours  | Add pagination to fac_attendance,
+     | feature gaps                        |         |             | fac_marks, notices,
+     |                                     |         |             | study_materials. Make notices
+     |                                     |         |             | publicly visible. Add a
+     |                                     |         |             | public-facing placement
+     |                                     |         |             | statistics page. Add password
+     |                                     |         |             | reset via email or at minimum a
+     |                                     |         |             | "generate new password" admin
+     |                                     |         |             | flow.
+
+
+============================================================================
+BOTTOM LINE
+============================================================================
+
+This is an impressively feature-rich single-developer Flask app that
+covers more ground than many student projects -- 20+ modules, a polished
+dark theme, and solid conceptual breadth. However, it has THREE CRITICAL
+SECURITY FLAWS that make it unsuitable for production use: a hardcoded
+session secret that lets anyone forge any session, zero CSRF protection
+across all state-changing endpoints, and an admin file editor with path
+traversal. The hardcoded "faculty123" password for all faculty accounts
+and a silently broken password-change flow compound the problem.
+Architecturally, the 1100-line monolith with duplicated schemas and no
+tests will become increasingly painful to maintain. For a college site
+handling real student data, the top 3 security fixes (CSRF, secret key,
+rate limiting) should be deployed BEFORE any student touches this.

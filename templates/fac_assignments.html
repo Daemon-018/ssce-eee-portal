@@ -15,6 +15,7 @@
     <div class="card">
       <h3>Upload New Assignment</h3>
       <form method="POST" action="{{ url_for('fac_assignments_upload') }}" enctype="multipart/form-data" class="form-inline">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <select name="subject" required>
           <option value="">-- Subject --</option>
           {% for s in subjects %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
@@ -45,6 +46,7 @@
               <td><a class="btn btn-sm btn-outline" href="{{ url_for('fac_assignments_download', aid=a['id']) }}">Download</a></td>
               <td>
                 <form method="POST" action="{{ url_for('fac_assignments_delete', aid=a['id']) }}" onsubmit="return confirm('Delete this assignment?');">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-sm btn-danger" type="submit">Delete</button>
                 </form>
               </td>

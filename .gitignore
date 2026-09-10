@@ -10,3 +10,7 @@ current_*.txt
 *.sock
 eee.db.bak*
 .env
+
+# secrets
+.secret_key
+.generated_passwords.txt

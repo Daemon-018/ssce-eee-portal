@@ -11,6 +11,7 @@
     <div class="card form-card">
       <h3>Update Unit Status</h3>
       <form method="post" class="inline-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <select name="subject">
           {% for s in subjects %}<option>{{ s }}</option>{% endfor %}
         </select>

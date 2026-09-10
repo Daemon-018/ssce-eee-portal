@@ -16,6 +16,7 @@
       <h3>Step 1 — Upload marks sheet</h3>
       <p class="muted small">Supported: .xlsx, .xls, .pdf · Exam /25, Assignment /5</p>
       <form method="POST" action="{{ url_for('fac_marks_upload') }}" enctype="multipart/form-data" class="form-inline">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="file" name="file" accept=".xlsx,.xls,.pdf" required class="input">
         <button class="btn btn-solid" type="submit">Parse File</button>
       </form>
@@ -52,6 +53,7 @@
         </table>
       </div>
       <form method="POST" action="{{ url_for('fac_marks_import') }}" id="import-form" style="margin-top:14px">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="records_json" id="records-json">
         <button class="btn btn-solid" type="submit" onclick="return collectRecords()">Confirm &amp; Import All</button>
         <a class="btn btn-ghost" href="{{ url_for('fac_marks_upload') }}">Discard</a>

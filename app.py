@@ -2,19 +2,72 @@
 Flask app: home, student login, faculty login, role dashboards.
 """
 import functools
-import re
 import json
+import os
+import re
+import secrets
 import sqlite3
+import time
+from pathlib import Path
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, flash, g)
+                   url_for, session, flash, g, abort)
 
 from db import get_db, init_db, seed_users, seed_faculty
 from seed_data import build_db
 
 app = Flask(__name__)
-app.secret_key = "ssce-eee-dev-key-change-me"
+
+
+def _app_secret():
+    key = os.environ.get("SECRET_KEY")
+    if key:
+        return key
+    kf = Path(app.root_path) / ".secret_key"
+    if kf.exists():
+        return kf.read_text().strip()
+    key = secrets.token_urlsafe(32)
+    kf.write_text(key)
+    return key
+
+
+app.secret_key = _app_secret()
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Secure cookies in production (HTTPS behind Render proxy)
+if os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER"):
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# Cap uploads (assignments / marks files) — 16 MB
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
+# ---- CSRF protection (lightweight, no flask-wtf dependency) ----
+def _csrf_token():
+    tok = session.get("_csrf_token")
+    if not tok:
+        tok = secrets.token_urlsafe(32)
+        session["_csrf_token"] = tok
+    return tok
+
+app.jinja_env.globals["csrf_token"] = _csrf_token
+
+@app.before_request
+def csrf_protect():
+    if request.method == "POST":
+        tok = session.get("_csrf_token")
+        sent = request.form.get("_csrf_token", "")
+        if not tok or not sent or not secrets.compare_digest(tok, sent):
+            abort(400, description="CSRF token missing or invalid")
+
+# ---- login rate limiting (simple in-memory, per-IP) ----
+_login_attempts = {}
+
+def _login_throttle(ip):
+    now = time.time()
+    _login_attempts[ip] = [t for t in _login_attempts.get(ip, []) if now - t < 300]
+    if len(_login_attempts[ip]) >= 10:
+        return True
+    _login_attempts[ip].append(now)
+    return False
 
 init_db()
 seed_users()
@@ -86,6 +139,12 @@ def do_login():
         return "Bad role", 400
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
+
+    # rate limit per IP: 10 attempts / 5 min
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr or "?").split(",")[0].strip()
+    if _login_throttle(ip):
+        flash("Too many login attempts. Try again in 5 minutes.", "error")
+        return redirect(url_for("login", role=role))
 
     db = get_db_conn()
     user = db.execute(
@@ -222,9 +281,12 @@ def profile():
 @login_required(role="faculty")
 def fac_attendance():
     db = get_db_conn()
-    students = db.execute(
+    all_students = db.execute(
         "SELECT username,name,section FROM users WHERE role='student' ORDER BY username"
     ).fetchall()
+    sections = sorted({r["section"] for r in all_students if r["section"]})
+    sel_section = request.args.get("section", "").strip()
+    students = [r for r in all_students if not sel_section or r["section"] == sel_section]
     rows = db.execute(
         """SELECT a.*, u.name FROM attendance a
            JOIN users u ON u.username=a.username
@@ -234,7 +296,8 @@ def fac_attendance():
     for r in rows:
         data.setdefault(r["subject"], {})[r["username"]] = (r["attended"], r["total"])
     return render_template("fac_attendance.html", students=students,
-                           subjects=sorted(data.keys()), data=data)
+                           subjects=sorted(data.keys()), data=data, sections=sections,
+                           sel_section=sel_section)
 
 
 @app.route("/faculty/attendance/update", methods=["POST"])
@@ -338,9 +401,12 @@ def marks():
 @login_required(role="faculty")
 def fac_marks():
     db = get_db_conn()
-    students = db.execute(
+    all_students = db.execute(
         "SELECT username,name,section FROM users WHERE role='student' ORDER BY username"
     ).fetchall()
+    sections = sorted({r["section"] for r in all_students if r["section"]})
+    sel_section = request.args.get("section", "").strip()
+    students = [r for r in all_students if not sel_section or r["section"] == sel_section]
     subjects = [r[0] for r in db.execute(
         "SELECT DISTINCT subject FROM timetable WHERE year_sem='3-1' ORDER BY subject").fetchall()]
     rows = db.execute(
@@ -351,7 +417,8 @@ def fac_marks():
     data = {}
     for r in rows:
         data.setdefault(r["subject"], {}).setdefault(r["username"], {})[r["exam"]] = r
-    return render_template("fac_marks.html", students=students, subjects=subjects, data=data)
+    return render_template("fac_marks.html", students=students, subjects=subjects, data=data,
+                           sections=sections, sel_section=sel_section)
 
 
 @app.route("/faculty/marks/update", methods=["POST"])
@@ -510,11 +577,14 @@ def admin_edit_file(filepath):
     if not session.get("is_admin"):
         flash("Super Admin access required.", "error")
         return redirect(url_for("dashboard"))
-    
-    root = "/data/data/com.termux/files/home/eee_site"
-    full_path = f"{root}/{filepath}"
-    
-    if not full_path.startswith(root):
+
+    root = Path(app.root_path).resolve()
+    full_path = (root / filepath).resolve()
+
+    # Path traversal guard: must stay inside the site root
+    try:
+        full_path.relative_to(root)
+    except ValueError:
         return "Access Denied", 403
 
     if request.method == "POST":
@@ -523,6 +593,9 @@ def admin_edit_file(filepath):
             f.write(new_content)
         flash(f"File {filepath} updated successfully!", "success")
         return redirect(url_for("admin_edit_file", filepath=filepath))
+
+    if not full_path.exists():
+        return "File not found", 404
 
     try:
         with open(full_path, "r", encoding="utf-8") as f:
@@ -1051,8 +1124,6 @@ def fac_assignments_upload():
         return redirect(url_for("fac_assignments"))
 
     # secure-ish: keep extension, sanitize filename
-    from pathlib import Path
-    import re
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", Path(file.filename).name)
     dest_dir = Path(app.root_path) / "static" / "uploads" / "assignments"
     dest_dir.mkdir(parents=True, exist_ok=True)

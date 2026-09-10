@@ -12,6 +12,7 @@
       <div class="card form-card">
         <h3>Schedule New Class</h3>
         <form method="post">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <label>Subject
             <select name="subject">
               {% for s in ["Power System Analysis - II", "Power Electronics - II", "Electrical Machine Design", "Control Systems", "Microprocessors & Microcontrollers", "Digital Signal Processing"] %}

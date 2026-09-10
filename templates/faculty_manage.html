@@ -12,6 +12,7 @@
     <details class="card manage-add-card" {% if not faculty %}open{% endif %}>
       <summary class="manage-add-summary">+ Add New Faculty</summary>
       <form method="POST" class="manage-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="fid" value="">
         <div class="form-row">
           <div><label class="slot-label">Full Name</label><input class="input" name="name" required></div>
@@ -53,6 +54,7 @@
           <a class="man-preview" href="{{ url_for('faculty_detail', slug=f.slug) }}" target="_blank">View →</a>
         </summary>
         <form method="POST" class="manage-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="fid" value="{{ f.id }}">
           <div class="form-row">
             <div><label class="slot-label">Full Name</label><input class="input" name="name" value="{{ f.name }}" required></div>

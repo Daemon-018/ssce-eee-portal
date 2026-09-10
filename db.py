@@ -1,5 +1,7 @@
 """EEE Dept app - database layer v2 (portal modules)."""
 import json
+import os
+import secrets
 import sqlite3
 from pathlib import Path
 from werkzeug.security import generate_password_hash
@@ -267,35 +269,40 @@ def seed_users():
     conn = get_db()
     _ensure_leaves_gallery(conn)
     users = [
-        ("faculty", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
+        ("faculty", "faculty", "faculty", "Dr. G.T. Chandra Sekhar",
          "hod.eee@srisivani.edu.in", "", "", "", None,
          "Vice Principal", "M.Tech, Ph.D. - 18 years experience"),
-        # individual faculty accounts — username = faculty-name@gmail.com, pass faculty123
-        ("gtchandrasekhar@gmail.com", "faculty123", "faculty", "Dr. G.T. Chandra Sekhar",
+        # individual faculty accounts — username = faculty-name@gmail.com
+        ("gtchandrasekhar@gmail.com", "faculty", "faculty", "Dr. G.T. Chandra Sekhar",
          "gtchandrasekhar@gmail.com", "", "", "", None, "Vice Principal & Professor", ""),
-        ("kanthiandhavarapu@gmail.com", "faculty123", "faculty", "Dr. Kanthi Andhavarapu",
+        ("kanthiandhavarapu@gmail.com", "faculty", "faculty", "Dr. Kanthi Andhavarapu",
          "kanthiandhavarapu@gmail.com", "", "", "", None, "HoD of EEE", ""),
-        ("majjisaisudha@gmail.com", "faculty123", "faculty", "Ms. Majji Sai Sudha",
+        ("majjisaisudha@gmail.com", "faculty", "faculty", "Ms. Majji Sai Sudha",
          "majjisaisudha@gmail.com", "", "", "", None, "Assistant Professor", ""),
-        ("padminianakapalli@gmail.com", "faculty123", "faculty", "Ms. Padmini Anakapalli",
+        ("padminianakapalli@gmail.com", "faculty", "faculty", "Ms. Padmini Anakapalli",
          "padminianakapalli@gmail.com", "", "", "", None, "Diploma HoD of EEE", ""),
-        ("praveenkumarjammu@gmail.com", "faculty123", "faculty", "Mr. Praveen Kumar Jammu",
+        ("praveenkumarjammu@gmail.com", "faculty", "faculty", "Mr. Praveen Kumar Jammu",
          "praveenkumarjammu@gmail.com", "", "", "", None, "Assistant Professor", ""),
-        ("maheswarambhanuchandhar@gmail.com", "faculty123", "faculty", "Dr. Maheswaram Bhanu Chandhar",
+        ("maheswarambhanuchandhar@gmail.com", "faculty", "faculty", "Dr. Maheswaram Bhanu Chandhar",
          "maheswarambhanuchandhar@gmail.com", "", "", "", None, "Assistant Professor", ""),
     ]
+    default_pass = os.environ.get("DEFAULT_PASSWORD", "") or ""
+    new_creds = []
     for u in users:
         exists = conn.execute("SELECT id FROM users WHERE username=?", (u[0],)).fetchone()
         if not exists:
+            pw = default_pass or secrets.token_urlsafe(12)
             conn.execute(
                 """INSERT INTO users
                    (username,password_hash,role,name,email,section,year,batch,cgpa,designation,extra)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-                (u[0], generate_password_hash(u[1]), u[2], u[3], u[4],
+                (u[0], generate_password_hash(pw), u[2], u[3], u[4],
                  u[5], u[6], u[7], u[8], u[9], u[10]),
             )
+            new_creds.append((u[0], pw))
         else:
-            # refresh profile data if the row already exists (idempotent)
+            # refresh profile data only — NEVER touch the password hash (avoids
+            # silently resetting rotated passwords back to a known default)
             conn.execute(
                 """UPDATE users SET name=?,email=?,section=?,year=?,batch=?,cgpa=?,designation=?,extra=?
                    WHERE username=?""",
@@ -303,7 +310,18 @@ def seed_users():
             )
     conn.commit()
     conn.close()
-    print("[db] seeded/refreshed demo users")
+    if new_creds:
+        try:
+            from pathlib import Path as _P
+            f = _P(__file__).parent / ".generated_passwords.txt"
+            with open(f, "a", encoding="utf-8") as fh:
+                for uname, pw in new_creds:
+                    fh.write(f"{uname}: {pw}\n")
+            os.chmod(f, 0o600)
+            print(f"[db] new accounts created -> one-time passwords written to {f}")
+        except Exception:
+            pass
+    print("[db] seeded/refreshed demo users (passwords are NOT reset on refresh)")
 
 def seed_faculty():
     conn = get_db()

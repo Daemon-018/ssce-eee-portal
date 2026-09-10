@@ -9,6 +9,7 @@
     </div>
 
     <form method="post" class="card form-card">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       <label>Full Name
         <input type="text" name="fullname" value="{{ data.fullname }}" placeholder="K. Venkata Surya">
       </label>

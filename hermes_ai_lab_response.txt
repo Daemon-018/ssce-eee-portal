@@ -1,0 +1,51 @@
+Hermes Agent's critique of the /ai-lab idea
+Asked: 2026-09-08
+Ask: "You are collaborating with OpenCode and a human developer on a Flask EEE
+college website. OpenCode proposed building a private /ai-lab group chat page
+where the human sends one task and BOTH OpenCode (via 'opencode run') and Hermes
+(via 'hermes chat -q') respond side by side... Critique this idea - is it useful
+or overengineered? What would you change or add?"
+
+============================================================================
+HERMES RESPONSE (verbatim)
+============================================================================
+
+I'll critique this directly - no tools needed, it's an architecture judgment call.
+
+Honest verdict: overengineered for the problem, but the core value is real.
+
+- Useful, genuinely. The "one prompt -> both agents -> side-by-side" view is the
+  real value: you get two independent takes on the same task without manually
+  re-pasting. For decision/design/code-review questions, that's genuinely better
+  than one agent. Keep THAT.
+
+- The dual-response part is the overengineering. Both OpenCode and Hermes are
+  already interactive CLIs. Adding a Flask page that shells out to `opencode run`
+  + `hermes chat -q` is a thin wrapper around two processes you can already drive
+  from your terminal. You're building a UI to re-type what your shell already does.
+
+- The killer problem: "run -q" for a full agent carousel is slow and unreliable.
+  `opencode run` and `hermes chat -q` are one-shot non-interactive. For multi-round
+  steering, every turn must re-invoke both with the whole history - each call is a
+  cold LLM start (10-30s+ each). An interactive "conversation" becomes two
+  syntactically-serialized batch jobs per message. That's not a chat; it's a slow
+  request/response cron. Latency kills the "steer both" promise.
+
+- Secret-key protection is a false sense of security. An owner-only page behind a
+  secret key you pass in the URL/header is fine for low-stakes, but it's not auth.
+  Anyone with the key gets full agent execution on your server - which means
+  arbitrary command execution. That's a real attack surface on a college website.
+  If you keep it, rate-limit it, bind it to a single hardcoded key, never log it,
+  and never expose it in a GET URL.
+
+- What I'd actually change: skip the Flask orchestration page entirely. Do it in
+  your shell - open two split panes (OpenCode left, Hermes right), paste the task
+  to both, steer each live. Zero build cost, real interactivity, no new attack
+  surface. If you NEED the persistence/parallel view for later review, that's a
+  legit one-off script (run_both.py <task> -> two JSON outputs + SQLite log), not
+  a protected web page on the college site.
+
+Bottom line: the concept (two agents on one task, logged for reuse) is good - keep
+it as a local script or split-terminal workflow. The delivery (secret-key Flask
+page on the dept site opening agent execution to a URL) is the part to drop. It
+buys UI at the cost of latency and security.

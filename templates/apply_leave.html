@@ -13,6 +13,7 @@
       <div class="card">
         <h3>New request</h3>
         <form method="POST" action="{{ url_for('apply_leave') }}" class="form-inline" style="align-items:stretch;flex-direction:column">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <label>Reason</label>
           <textarea class="input" name="reason" rows="3" required placeholder="e.g. Medical appointment"></textarea>
           <div class="form-row">

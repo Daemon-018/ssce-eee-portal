@@ -16,10 +16,12 @@
         <div class="toolbar">
             <h2>Editing: {{ filepath }}</h2>
             <form method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-solid">Save Changes</button>
             </form>
         </div>
         <form method="POST">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <textarea name="content">{{ content }}</textarea>
             <button type="submit" class="btn btn-solid btn-block" style="margin-top:10px;">Save Changes</button>
         </form>

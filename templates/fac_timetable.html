@@ -17,6 +17,7 @@
         {% for p in range(1, 8) %}
           {% set slot = grid[d][p] %}
           <form method="POST" action="{{ url_for('fac_timetable_update') }}" class="slot-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="day" value="{{ d }}">
             <input type="hidden" name="period" value="{{ p }}">
             <div class="slot-label">{{ name }} · P{{ p }}</div>
