@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     batch TEXT DEFAULT '',
     cgpa REAL,
     designation TEXT DEFAULT '',
+    entry TEXT DEFAULT 'regular',       -- regular | le (lateral entry)
     extra TEXT DEFAULT '',
     created_at TEXT DEFAULT (datetime('now','localtime'))
 );
@@ -258,6 +259,7 @@ def init_db():
         ("batch", "TEXT DEFAULT ''"),
         ("cgpa", "REAL"),
         ("designation", "TEXT DEFAULT ''"),
+        ("entry", "TEXT DEFAULT 'regular'"),
     ]:
         if col not in existing:
             conn.execute(f"ALTER TABLE users ADD COLUMN {col} {decl}")
