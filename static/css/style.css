@@ -230,6 +230,11 @@ textarea.input{resize:vertical}
 .auth-head h1{font-size:1.35rem}
 .auth-note{font-size:.82rem;color:var(--sub);margin-top:16px;text-align:center}
 .auth-demo{font-size:.8rem;background:var(--charcoal);border-radius:10px;padding:10px 14px;color:var(--sub);margin-top:14px}
+/* password show/hide */
+.pw-wrap{position:relative}
+.pw-wrap .input{padding-right:44px}
+.pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.05rem;line-height:1;padding:4px;color:var(--sub)}
+.pw-toggle:hover{color:var(--blue)}
 
 /* ---------- tables ---------- */
 .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
