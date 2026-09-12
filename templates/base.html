@@ -111,6 +111,7 @@
 
 <style>
 .eng-popup-overlay{position:fixed;inset:0;background:rgba(5,10,18,.78);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(3px)}
+.eng-popup-overlay[hidden]{display:none}
 .eng-popup{position:relative;max-width:460px;width:100%;background:linear-gradient(160deg,#16222F,#0E1722);border:1px solid rgba(242,165,65,.45);border-radius:18px;padding:34px 30px 30px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:engPop .35s ease-out}
 @keyframes engPop{from{transform:translateY(24px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 .eng-popup h2{color:var(--amber);margin:8px 0 10px;font-size:1.6rem}
