@@ -95,5 +95,49 @@
     &copy; 2026 Sri Sivani College of Engineering, Srikakulam. All Rights Reserved.
   </div>
 </footer>
+
+<!-- Engineers' Day popup (all visitors) -->
+<div class="eng-popup-overlay" id="engPopup" hidden>
+  <div class="eng-popup">
+    <button class="eng-popup-close" onclick="dismissEngPopup()" aria-label="Close">&times;</button>
+    <div class="eng-popup-gear" aria-hidden="true">&#9881;</div>
+    <p class="eng-popup-eyebrow">National Engineers' Day</p>
+    <h2>Happy Engineers' Day!</h2>
+    <p>Celebrating the birth anniversary of <strong>Sir M. Visvesvaraya</strong> — a tribute to all engineers who build, power and shape tomorrow.</p>
+    <p class="eng-popup-sub">Wishing every student, faculty member and the entire EEE fraternity a day of innovation and pride.</p>
+    <a class="btn btn-solid" href="{{ url_for('home') }}">Keep Innovating &rarr;</a>
+  </div>
+</div>
+
+<style>
+.eng-popup-overlay{position:fixed;inset:0;background:rgba(5,10,18,.78);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(3px)}
+.eng-popup{position:relative;max-width:460px;width:100%;background:linear-gradient(160deg,#16222F,#0E1722);border:1px solid rgba(242,165,65,.45);border-radius:18px;padding:34px 30px 30px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:engPop .35s ease-out}
+@keyframes engPop{from{transform:translateY(24px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.eng-popup h2{color:var(--amber);margin:8px 0 10px;font-size:1.6rem}
+.eng-popup p{color:var(--sub);font-size:.92rem;line-height:1.55}
+.eng-popup .eng-popup-sub{color:var(--faint);font-size:.82rem;margin-top:10px;margin-bottom:18px}
+.eng-popup-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--sky);margin:0}
+.eng-popup-gear{font-size:2.6rem;color:var(--blue);display:inline-block;animation:spin 10s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.eng-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--faint);font-size:1.6rem;cursor:pointer;line-height:1}
+.eng-popup-close:hover{color:var(--amber)}
+.eng-popup[hidden]{display:none}
+</style>
+
+<script>
+(function(){
+  var KEY = 'eng_popup_dismissed';
+  function shown(){ try{ return localStorage.getItem(KEY)==='1'; }catch(e){ return false; } }
+  function dismissEngPopup(){
+    try{ localStorage.setItem(KEY,'1'); }catch(e){}
+    document.getElementById('engPopup').hidden = true;
+  }
+  window.dismissEngPopup = dismissEngPopup;
+  window.addEventListener('DOMContentLoaded', function(){
+    if (shown()) return;
+    setTimeout(function(){ document.getElementById('engPopup').hidden = false; }, 800);
+  });
+})();
+</script>
 </body>
 </html>
