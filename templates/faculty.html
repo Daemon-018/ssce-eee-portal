@@ -23,4 +23,27 @@
     </div>
   </div>
 </section>
+
+<!-- LAB ASSISTANTS -->
+<section class="page-section">
+  <div class="container">
+    <div class="page-head">
+      <div class="eyebrow">Support Staff</div>
+      <h2>Lab Assistants</h2>
+      <p class="muted">The dedicated laboratory support team keeping the EEE labs running.</p>
+    </div>
+    <div class="faculty-grid">
+      {% for l in lab_assistants %}
+      <div class="card fcard">
+        <div class="fcard-img">
+          <img src="{{ url_for('static', filename='images/faculty/' ~ l.photo) }}" alt="{{ l.name }}" loading="lazy">
+        </div>
+        <h3>{{ l.name }}</h3>
+        <p class="muted">{{ l.qualification }}</p>
+        <span class="role-badge lab">{{ l.designation }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endblock %}

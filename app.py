@@ -120,7 +120,8 @@ def login_required(role=None):
 
 @app.route("/")
 def home():
-    return render_template("home.html", faculty=_faculty_rows())
+    fac, lab = _people_rows()
+    return render_template("home.html", faculty=fac, lab_assistants=lab)
 
 
 @app.route("/login/<role>")
@@ -718,7 +719,8 @@ def careers():
 
 # ============ faculty profiles (public) ============
 
-def _faculty_rows():
+def _people_rows():
+    """Active people split into faculty vs lab assistants."""
     db = get_db_conn()
     rows = db.execute(
         "SELECT * FROM faculty_profiles WHERE active=1 ORDER BY sort_order, name"
@@ -731,13 +733,22 @@ def _faculty_rows():
                 d[k] = json.loads(d[k] or "[]")
             except Exception:
                 d[k] = []
+        d["is_lab"] = d.get("category", "") == "lab_assistant"
         out.append(d)
-    return out
+    faculty = [d for d in out if not d["is_lab"]]
+    lab = [d for d in out if d["is_lab"]]
+    return faculty, lab
+
+
+def _faculty_rows():
+    faculty, _lab = _people_rows()
+    return faculty
 
 
 @app.route("/faculty")
 def faculty_list():
-    return render_template("faculty.html", faculty=_faculty_rows())
+    fac, lab = _people_rows()
+    return render_template("faculty.html", faculty=fac, lab_assistants=lab)
 
 
 @app.route("/faculty/<slug>")

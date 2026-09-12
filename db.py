@@ -224,7 +224,8 @@ CREATE TABLE IF NOT EXISTS faculty_profiles (
     cabin TEXT DEFAULT '',
     joined_year TEXT DEFAULT '',
     sort_order INTEGER DEFAULT 0,
-    active INTEGER DEFAULT 1
+    active INTEGER DEFAULT 1,
+    category TEXT DEFAULT 'faculty'     -- 'faculty' | 'lab_assistant'
 );
 
 CREATE TABLE IF NOT EXISTS assignments (
@@ -264,6 +265,11 @@ def init_db():
         if col not in existing:
             conn.execute(f"ALTER TABLE users ADD COLUMN {col} {decl}")
             print(f"[db] migrated: added users.{col}")
+    # migration: faculty_profiles.category (profiles vs lab assistants)
+    fp_cols = {r["name"] for r in conn.execute("PRAGMA table_info(faculty_profiles)").fetchall()}
+    if fp_cols and "category" not in fp_cols:
+        conn.execute("ALTER TABLE faculty_profiles ADD COLUMN category TEXT DEFAULT 'faculty'")
+        print("[db] migrated: added faculty_profiles.category")
     conn.commit()
     conn.close()
 
@@ -409,8 +415,8 @@ def seed_faculty():
         for p in profiles:
             cur.execute(
                 """INSERT INTO faculty_profiles
-                   (slug,name,photo,designation,qualification,experience,bio,research,subjects,achievements,email,cabin,joined_year,sort_order,active)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+                   (slug,name,photo,designation,qualification,experience,bio,research,subjects,achievements,email,cabin,joined_year,sort_order,active,category)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,'faculty')""",
                 (p[0], p[1], p[2], p[3], p[4], p[5], p[6],
                  json.dumps(p[7]), json.dumps(p[8]), json.dumps(p[9]),
                  p[10], p[11], p[12], p[13]),
