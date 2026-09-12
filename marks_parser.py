@@ -10,14 +10,16 @@ import os
 import re
 from pathlib import Path
 
-# Load .env
+# Load .env if present (never crash when missing — e.g. Render uses env vars)
 _env = {}
-for line in Path(__file__).parent.joinpath(".env").read_text().splitlines():
-    if "=" in line and not line.startswith("#"):
-        k, v = line.split("=", 1)
-        _env[k.strip()] = v.strip()
+_env_file = Path(__file__).parent.joinpath(".env")
+if _env_file.exists():
+    for line in _env_file.read_text().splitlines():
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            _env[k.strip()] = v.strip()
 
-OPENROUTER_KEY = _env.get("OPENROUTER_API_KEY", "")
+OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "") or _env.get("OPENROUTER_API_KEY", "")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Use a reliable model for file parsing — llama-3.3-70b handles structured extraction well
 AI_MODEL = "meta-llama/llama-3.3-70b-instruct"
@@ -163,6 +165,13 @@ Return empty array [] if the file has no parseable marks data."""
         raise ValueError("AI returned non-array result.")
 
     # Validate each record
+    def _to_int(v, lo, hi):
+        try:
+            n = int(float(str(v).strip() or 0))
+        except (TypeError, ValueError):
+            return lo
+        return max(lo, min(hi, n))
+
     valid = []
     for r in records:
         if not all(k in r for k in ("username", "subject", "exam")):
@@ -172,8 +181,8 @@ Return empty array [] if the file has no parseable marks data."""
         r["exam"] = str(r["exam"]).upper().replace(" ", "")
         if r["exam"] not in ("MID1", "MID2"):
             r["exam"] = "MID1"
-        r["exam_marks"] = max(0, min(25, int(r.get("exam_marks", 0) or 0)))
-        r["assign_marks"] = max(0, min(5, int(r.get("assign_marks", 0) or 0)))
+        r["exam_marks"] = _to_int(r.get("exam_marks", 0), 0, 25)
+        r["assign_marks"] = _to_int(r.get("assign_marks", 0), 0, 5)
         if r["username"] and r["subject"]:
             valid.append(r)
 

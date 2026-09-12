@@ -503,9 +503,9 @@ def fac_marks_upload():
         flash("No marks data found in the file.", "error")
         return redirect(url_for("fac_marks_upload"))
 
-    # Store records in session for preview → confirm flow
-    session["pending_marks"] = records
-    session["pending_marks_filename"] = file.filename
+    # Record set is passed to the confirm step via the records_json hidden field
+    # (NOT the session cookie — cookie has a ~4 KB limit and classes easily exceed it,
+    #  which would silently break login/CSRF).
     return render_template("fac_marks_upload.html", subjects=subjects,
                            records=records, filename=file.filename, error=None)
 
@@ -513,19 +513,28 @@ def fac_marks_upload():
 @app.route("/faculty/marks/import", methods=["POST"])
 @login_required(role="faculty")
 def fac_marks_import():
-    records = session.get("pending_marks")
-    if not records:
+    # Records come from the preview form (records_json). The session-based
+    # fallback was removed — pending_marks is too large for a client cookie.
+    import json
+    records_json = request.form.get("records_json", "").strip()
+    if not records_json:
         flash("No pending marks to import. Upload a file first.", "error")
         return redirect(url_for("fac_marks_upload"))
+    try:
+        records = json.loads(records_json)
+    except (json.JSONDecodeError, TypeError):
+        flash("Preview data was lost. Please upload the file again.", "error")
+        return redirect(url_for("fac_marks_upload"))
+    if not isinstance(records, list) or not records:
+        flash("No records found in preview data.", "error")
+        return redirect(url_for("fac_marks_upload"))
 
-    # Allow faculty to edit records in the form — re-read from POST
-    import json
-    edited_json = request.form.get("records_json")
-    if edited_json:
+    def _to_int(v, lo, hi):
         try:
-            records = json.loads(edited_json)
-        except (json.JSONDecodeError, TypeError):
-            pass  # fall back to session data
+            n = int(float(str(v).strip() or 0))
+        except (TypeError, ValueError):
+            return lo
+        return max(lo, min(hi, n))
 
     db = get_db_conn()
     inserted = 0
@@ -533,16 +542,13 @@ def fac_marks_import():
     errors = []
 
     for r in records:
-        username = r.get("username", "").strip()
-        subject = r.get("subject", "").strip()
-        exam = r.get("exam", "").upper().replace(" ", "")
-        exam_marks = int(r.get("exam_marks", 0) or 0)
-        assign_marks = int(r.get("assign_marks", 0) or 0)
-
+        username = (r.get("username") or "").strip()
+        subject = (r.get("subject") or "").strip()
+        exam = (r.get("exam") or "").upper().replace(" ", "")
         if not username or not subject or exam not in ("MID1", "MID2"):
             continue
-        exam_marks = max(0, min(25, exam_marks))
-        assign_marks = max(0, min(5, assign_marks))
+        exam_marks = _to_int(r.get("exam_marks", 0), 0, 25)
+        assign_marks = _to_int(r.get("assign_marks", 0), 0, 5)
         total = exam_marks + assign_marks
 
         exists = db.execute(
@@ -566,8 +572,6 @@ def fac_marks_import():
                 errors.append(f"{username}/{subject}: {e}")
 
     db.commit()
-    session.pop("pending_marks", None)
-    session.pop("pending_marks_filename", None)
 
     msg = f"Imported: {inserted} new, {updated} updated."
     if errors:
