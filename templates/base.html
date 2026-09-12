@@ -121,19 +121,13 @@
 </style>
 
 <script>
-(function(){
-  var KEY = 'eng_poster_v1';
-  function shown(){ try{ return localStorage.getItem(KEY)==='1'; }catch(e){ return false; } }
-  function dismissEngPopup(){
-    try{ localStorage.setItem(KEY,'1'); }catch(e){}
-    document.getElementById('engPopup').hidden = true;
-  }
-  window.dismissEngPopup = dismissEngPopup;
-  window.addEventListener('DOMContentLoaded', function(){
-    if (shown()) return;
-    setTimeout(function(){ document.getElementById('engPopup').hidden = false; }, 800);
-  });
-})();
+function dismissEngPopup(){
+  document.getElementById('engPopup').hidden = true;
+}
+window.dismissEngPopup = dismissEngPopup;
+window.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){ document.getElementById('engPopup').hidden = false; }, 800);
+});
 </script>
 </body>
 </html>
