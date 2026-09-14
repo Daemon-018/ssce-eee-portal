@@ -166,4 +166,35 @@
   </div>
 </section>
 
+<!-- Engineers' Day poster popup (home page only) -->
+<div class="eng-popup-overlay" id="engPopup" hidden>
+  <div class="eng-popup">
+    <button class="eng-popup-close" onclick="dismissEngPopup()" aria-label="Close">&times;</button>
+    <img class="eng-popup-img" src="{{ url_for('static', filename='images/engineering_day_poster.png') }}"
+         alt="Happy Engineers' Day poster">
+    <div class="eng-popup-foot">
+      <button class="btn btn-solid" type="button" onclick="dismissEngPopup()">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.eng-popup-overlay{position:fixed;inset:0;background:rgba(5,10,18,.82);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;backdrop-filter:blur(3px)}
+.eng-popup-overlay[hidden]{display:none}
+.eng-popup{position:relative;max-width:92vw;width:auto;background:#0E1722;border-radius:14px;padding:14px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:engPop .3s ease-out}
+@keyframes engPop{from{transform:translateY(16px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.eng-popup-img{display:block;max-width:min(430px,86vw);max-height:76vh;width:auto;height:auto;border-radius:8px;object-fit:contain}
+.eng-popup-foot{margin-top:10px;text-align:center}
+.eng-popup-close{position:absolute;top:6px;right:10px;background:rgba(10,20,30,.65);border:none;color:#fff;font-size:1.7rem;line-height:1;cursor:pointer;border-radius:50%;width:34px;height:34px;z-index:2}
+.eng-popup-close:hover{color:var(--amber)}
+.eng-popup[hidden]{display:none}
+</style>
+
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  var el = document.getElementById('engPopup');
+  if (el) setTimeout(function(){ el.hidden = false; }, 800);
+});
+</script>
+
 {% endblock %}

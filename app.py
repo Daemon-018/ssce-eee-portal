@@ -670,20 +670,85 @@ def academic_calendar():
 def backlog_tracker():
     db = get_db_conn()
     if session["role"] == "student":
-        rows = db.execute(
-            "SELECT * FROM backlog WHERE username=? ORDER BY cleared, sem, subject",
-            (session["username"],)
-        ).fetchall()
+        rows = _backlog_from_results(db, username=session["username"])
     else:
-        rows = db.execute(
-            """SELECT b.*, u.name FROM backlog b
-               JOIN users u ON u.username=b.username
-               ORDER BY b.cleared, b.sem, b.subject""",
-        ).fetchall()
+        rows = _backlog_from_results(db)
     pending = [r for r in rows if not r["cleared"]]
     cleared = [r for r in rows if r["cleared"]]
     return render_template("backlog_tracker.html", rows=rows,
                            pending=pending, cleared=cleared)
+
+
+def _backlog_from_results(db, username=None):
+    """Derive the backlog from sem_results (latest status per subject).
+
+    A subject is cleared only if the latest exam cycle for it is 'Pass'.
+    Falls back to the manual `backlog` table rows so staff notes still show.
+    """
+    sql = """SELECT s.username, s.year_sem, s.subject, s.code,
+                    s.exam_cycle, s.credit_status, s.exam_label, u.name
+             FROM sem_results s
+             JOIN users u ON u.username = s.username
+             {where}
+             ORDER BY s.username, s.year_sem, s.subject, s.exam_cycle"""
+    params = ()
+    if username:
+        sql = sql.format(where="WHERE s.username=?")
+        params = (username,)
+    else:
+        sql = sql.format(where="")
+
+    latest = {}
+    for r in db.execute(sql, params):
+        key = (r["username"], r["year_sem"], r["subject"])
+        cycles = latest.setdefault(key, {"cycles": set(), "latest_cycle": 0,
+                                         "pass_label": ""})
+        cycles["cycles"].add(r["exam_cycle"])
+        if r["exam_cycle"] >= cycles["latest_cycle"]:
+            cycles["latest_cycle"] = r["exam_cycle"]
+            cycles["status"] = r["credit_status"]
+            cycles["label"] = r["exam_label"]
+            cycles["name"] = r["name"]
+            cycles["code"] = r["code"]
+            cycles["sem"] = r["year_sem"]
+
+    out = []
+    for key, c in latest.items():
+        out.append({
+            "username": key[0],
+            "name": c.get("name", key[0]),
+            "subject": key[2],
+            "code": c.get("code", ""),
+            "sem": c.get("sem", key[1]),
+            "attempts": len(c["cycles"]),
+            "cleared": 1 if c.get("status") == "Pass" else 0,
+            "cleared_date": c.get("label") if c.get("status") == "Pass" else "",
+            "note": "",
+        })
+    out.sort(key=lambda r: (r["sem"], r["subject"]))
+
+    # Merge manual backlog rows (e.g. staff-added notes) not already covered
+    if username:
+        manual = db.execute(
+            "SELECT * FROM backlog WHERE username=? ORDER BY cleared, sem, subject",
+            (username,)).fetchall()
+    else:
+        manual = db.execute(
+            """SELECT b.*, u.name FROM backlog b
+               JOIN users u ON u.username=b.username
+               ORDER BY b.cleared, b.sem, b.subject""",
+        ).fetchall()
+    covered = {(r["username"], r["sem"], r["subject"]) for r in out}
+    for b in manual:
+        if (b["username"], b["sem"], b["subject"]) in covered:
+            continue
+        out.append({
+            "username": b["username"], "name": b["name"] if "name" in b else b["username"],
+            "subject": b["subject"], "sem": b["sem"], "attempts": b["attempts"],
+            "cleared": b["cleared"], "cleared_date": b["cleared_date"], "note": b["note"],
+        })
+
+    return out
 
 @app.route("/exam-notifications")
 @login_required()
