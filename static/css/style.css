@@ -473,6 +473,7 @@ td.lunch{background:var(--warn-bg);color:var(--warn);font-weight:600;text-align:
 .crumb-sep{color:var(--sub);font-weight:400}
 
 .sem-grid,.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.year-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 
 .sem-folder,.subject-folder{display:flex;flex-direction:column;align-items:center;padding:22px 14px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s}
 .sem-folder:hover,.subject-folder:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,.25)}

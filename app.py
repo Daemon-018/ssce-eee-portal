@@ -217,37 +217,42 @@ def timetable():
 @login_required()
 def syllabus():
     db = get_db_conn()
-    sem = request.args.get("sem", "3-1")
-    entry = "lateral"
-    if session.get("role") == "student":
-        me = db.execute("SELECT entry, year FROM users WHERE id=?", (session.get("user_id"),)).fetchone()
-        entry = (me["entry"] if me and me["entry"] else "regular")
-        is_first_year = bool(me and me["year"] and "1st Year" in me["year"])
-        if entry == "lateral" and is_first_year:
-            entry = "lateral1y"
-    all_sems = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]
-    allowed = all_sems if entry in ("regular", "lateral1y") else all_sems[2:]
-    sems = [s for s in all_sems if s in allowed and db.execute(
-        "SELECT COUNT(*) c FROM syllabus WHERE year_sem=?", (s,)).fetchone()["c"] > 0]
-    if sem not in sems:
-        sem = sems[0] if sems else "3-1"
-    if session.get("role") == "student":
-        me2 = db.execute("SELECT year FROM users WHERE id=?", (session.get("user_id"),)).fetchone()
-        y = (me2["year"] if me2 and me2["year"] else "")
-        default_sem = {"1st Year": "1-1", "2nd Year": "2-2", "3rd Year": "3-1", "4th Year": "4-1"}.get(
-            next((k for k in ["1st Year", "2nd Year", "3rd Year", "4th Year"] if k in y), ""), sem)
-        if default_sem in sems:
-            sem = request.args.get("sem", default_sem)
-    rows = db.execute(
-        """SELECT * FROM syllabus WHERE program='B.Tech' AND year_sem=?
-           ORDER BY code""", (sem,)).fetchall()
-    import json as _json
-    subjects = []
-    for r in rows:
-        d = dict(r)
-        d["units"] = _json.loads(d["units"] or "[]")
-        subjects.append(d)
-    return render_template("syllabus.html", subjects=subjects, sems=sems, sem=sem, entry=entry)
+    years = [
+        {"num": 1, "label": "1st Year", "sems": ["1-1", "1-2"]},
+        {"num": 2, "label": "2nd Year", "sems": ["2-1", "2-2"]},
+        {"num": 3, "label": "3rd Year", "sems": ["3-1", "3-2"]},
+        {"num": 4, "label": "4th Year", "sems": ["4-1", "4-2"]},
+    ]
+    pdf_rows = db.execute("SELECT year_num, year_sem, drive_link, title FROM syllabus_pdfs").fetchall()
+    pdfs = {}
+    for r in pdf_rows:
+        pdfs[r["year_sem"]] = {"link": r["drive_link"], "title": r["title"]}
+    for y in years:
+        y["has_pdf"] = any(pdfs.get(s, {}).get("link") for s in y["sems"])
+        for i, sem in enumerate(y["sems"]):
+            p = pdfs.get(sem, {})
+            y["sems"][i] = {"name": sem, "link": p.get("link", ""), "title": p.get("title", "")}
+    return render_template("syllabus.html", years=years)
+
+
+@app.route("/syllabus/<int:year_num>")
+@login_required()
+def syllabus_year(year_num):
+    if year_num not in (1,2,3,4):
+        abort(404)
+    db = get_db_conn()
+    year_names = {1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year"}
+    sems = {1: ["1-1","1-2"], 2: ["2-1","2-2"], 3: ["3-1","3-2"], 4: ["4-1","4-2"]}
+    pdf_rows = db.execute(
+        "SELECT year_sem, drive_link, title FROM syllabus_pdfs WHERE year_num=?", (year_num,)
+    ).fetchall()
+    pdfs = {r["year_sem"]: {"link": r["drive_link"], "title": r["title"]} for r in pdf_rows}
+    sem_data = []
+    for s in sems[year_num]:
+        p = pdfs.get(s, {})
+        sem_data.append({"name": s, "link": p.get("link", ""), "title": p.get("title", "")})
+    return render_template("syllabus_year.html", year_num=year_num,
+                           year_name=year_names[year_num], sems=sem_data)
 
 
 @app.route("/attendance")

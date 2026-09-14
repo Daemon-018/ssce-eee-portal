@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ year_name }} Syllabus{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="crumb">
+      <a href="{{ url_for('syllabus') }}">Syllabus</a>
+      <span class="crumb-sep">›</span>
+      <span>{{ year_name }}</span>
+    </div>
+
+    <div class="page-head">
+      <h1>{{ year_name }} — Syllabus</h1>
+      <p class="muted">JNTU-GV R23 Regulation (JNTUGV CEV Autonomous)</p>
+    </div>
+
+    <div class="sem-grid">
+      {% for s in sems %}
+      {% if s.link %}
+      <div class="card sem-folder has-data">
+        <div class="sem-folder-icon">{{ s.name }}</div>
+        <div class="sem-folder-label">Semester</div>
+        {% if s.title %}
+        <p class="muted small" style="margin-bottom:8px">{{ s.title }}</p>
+        {% endif %}
+        <a class="btn btn-sm btn-solid" href="{{ s.link }}" target="_blank" rel="noopener" style="margin-top:auto">
+          Open Syllabus PDF
+        </a>
+      </div>
+      {% else %}
+      <div class="card sem-folder empty-folder">
+        <div class="sem-folder-icon">{{ s.name }}</div>
+        <div class="sem-folder-label">Semester</div>
+        <p class="muted small" style="margin-top:8px">Coming soon</p>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

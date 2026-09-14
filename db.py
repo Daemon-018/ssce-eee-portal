@@ -56,6 +56,16 @@ CREATE TABLE IF NOT EXISTS syllabus (
     units TEXT DEFAULT '[]'          -- JSON list of {"unit":"I","topics":[...]}
 );
 
+CREATE TABLE IF NOT EXISTS syllabus_pdfs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    year_num INTEGER NOT NULL,
+    year_sem TEXT NOT NULL UNIQUE,
+    title TEXT DEFAULT '',
+    drive_link TEXT DEFAULT '',
+    uploaded_by TEXT DEFAULT 'EEE Dept',
+    posted_on TEXT DEFAULT (date('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS attendance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
