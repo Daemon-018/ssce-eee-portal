@@ -622,39 +622,50 @@ def _subject_filter_kw():
     return {"program": "B.Tech", "year_sem": "3-1"}
 
 
+def _sem_key(sem):
+    try:
+        y, s = sem.split("-")
+        return (int(y), int(s))
+    except Exception:
+        return (99, 99)
+
+
+def _group_by_sem(rows):
+    """Group study rows by semester (ordered 1-1,1-2,2-1,...) then subject."""
+    by_sem = {}
+    for r in rows:
+        sem = r["year_sem"] or "3-1"
+        by_sem.setdefault(sem, {}).setdefault(r["subject"], []).append(r)
+    return {sem: by_sem[sem] for sem in sorted(by_sem, key=_sem_key)}
+
+
 @app.route("/study-materials")
 @login_required()
 def study_materials():
     db = get_db_conn()
     rows = db.execute(
-        "SELECT * FROM study_materials ORDER BY subject, posted_on DESC, id DESC"
+        "SELECT * FROM study_materials ORDER BY year_sem, subject, posted_on DESC, id DESC"
     ).fetchall()
-    by_subject = {}
-    for r in rows:
-        by_subject.setdefault(r["subject"], []).append(r)
-    return render_template("study_materials.html", by_subject=by_subject)
+    by_sem = _group_by_sem(rows)
+    return render_template("study_materials.html", by_sem=by_sem)
 
 
 @app.route("/pyq")
 @login_required()
 def pyq():
     db = get_db_conn()
-    rows = db.execute("SELECT * FROM pyq ORDER BY subject, year DESC, exam").fetchall()
-    by_subject = {}
-    for r in rows:
-        by_subject.setdefault(r["subject"], []).append(r)
-    return render_template("pyq.html", by_subject=by_subject)
+    rows = db.execute("SELECT * FROM pyq ORDER BY year_sem, subject, year DESC, exam").fetchall()
+    by_sem = _group_by_sem(rows)
+    return render_template("pyq.html", by_sem=by_sem)
 
 
 @app.route("/solved-papers")
 @login_required()
 def solved_papers():
     db = get_db_conn()
-    rows = db.execute("SELECT * FROM solved_papers ORDER BY subject, year DESC, exam").fetchall()
-    by_subject = {}
-    for r in rows:
-        by_subject.setdefault(r["subject"], []).append(r)
-    return render_template("solved_papers.html", by_subject=by_subject)
+    rows = db.execute("SELECT * FROM solved_papers ORDER BY year_sem, subject, year DESC, exam").fetchall()
+    by_sem = _group_by_sem(rows)
+    return render_template("solved_papers.html", by_sem=by_sem)
 
 
 @app.route("/academic-calendar")

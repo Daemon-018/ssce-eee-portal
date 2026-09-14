@@ -5,13 +5,15 @@
   <div class="container">
     <div class="page-head">
       <h1>Study Materials</h1>
-      <p class="muted">Easy notes, PDFs, PPTs and video lectures — subject-wise for 3-1 semester.</p>
+      <p class="muted">Easy notes, PDFs, PPTs and video lectures — subject-wise, semester-wise.</p>
     </div>
 
-    {% if not by_subject %}
+    {% if not by_sem %}
       <div class="card empty-card"><p>No study materials uploaded yet.</p></div>
     {% endif %}
 
+    {% for sem, by_subject in by_sem.items() %}
+    <h2 class="sem-sec">{{ sem }} Semester</h2>
     {% for subject, items in by_subject.items() %}
     <div class="card mat-card">
       <h3>{{ subject }}</h3>
@@ -32,6 +34,7 @@
       </div>
       <p class="muted small">Uploaded by {{ items[0].uploaded_by }}</p>
     </div>
+    {% endfor %}
     {% endfor %}
   </div>
 </section>

@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS study_materials (
     kind TEXT NOT NULL DEFAULT 'notes',   -- notes | pdf | link | ppt | video
     link TEXT DEFAULT '',
     uploaded_by TEXT DEFAULT 'EEE Dept',
-    posted_on TEXT DEFAULT (date('now','localtime'))
+    posted_on TEXT DEFAULT (date('now','localtime')),
+    year_sem TEXT NOT NULL DEFAULT '3-1'
 );
 
 CREATE TABLE IF NOT EXISTS pyq (
@@ -94,7 +95,8 @@ CREATE TABLE IF NOT EXISTS pyq (
     subject TEXT NOT NULL,
     year TEXT NOT NULL,
     exam TEXT NOT NULL DEFAULT 'Regular',  -- Regular | Supply
-    download TEXT DEFAULT ''
+    download TEXT DEFAULT '',
+    year_sem TEXT NOT NULL DEFAULT '3-1'
 );
 
 CREATE TABLE IF NOT EXISTS solved_papers (
@@ -102,7 +104,8 @@ CREATE TABLE IF NOT EXISTS solved_papers (
     subject TEXT NOT NULL,
     year TEXT NOT NULL,
     exam TEXT NOT NULL DEFAULT 'Regular',
-    link TEXT DEFAULT ''
+    link TEXT DEFAULT '',
+    year_sem TEXT NOT NULL DEFAULT '3-1'
 );
 
 CREATE TABLE IF NOT EXISTS academic_calendar (
@@ -270,6 +273,12 @@ def init_db():
     if fp_cols and "category" not in fp_cols:
         conn.execute("ALTER TABLE faculty_profiles ADD COLUMN category TEXT DEFAULT 'faculty'")
         print("[db] migrated: added faculty_profiles.category")
+    # migration: study support tables get a semester column (2-1 resources added)
+    for tbl in ("study_materials", "pyq", "solved_papers"):
+        cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({tbl})").fetchall()}
+        if "year_sem" not in cols:
+            conn.execute(f"ALTER TABLE {tbl} ADD COLUMN year_sem TEXT NOT NULL DEFAULT '3-1'")
+            print(f"[db] migrated: added {tbl}.year_sem")
     conn.commit()
     conn.close()
 

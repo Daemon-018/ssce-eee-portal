@@ -8,10 +8,12 @@
       <p class="muted">Step-by-step answers for previous year papers.</p>
     </div>
 
-    {% if not by_subject %}
+    {% if not by_sem %}
       <div class="card empty-card"><p>No solved papers uploaded yet.</p></div>
     {% endif %}
 
+    {% for sem, by_subject in by_sem.items() %}
+    <h2 class="sem-sec">{{ sem }} Semester</h2>
     {% for subject, items in by_subject.items() %}
     <div class="card mat-card">
       <h3>{{ subject }}</h3>
@@ -19,12 +21,13 @@
         {% for p in items %}
         <div class="mat-row">
           <span class="exam-badge exam-{{ 'supply' if p.exam == 'Supply' else 'regular' }}">{{ p.exam }}</span>
-          <span class="mat-title">{{ p.year }} — Solved Answers</span>
+          <span class="mat-title">{% if p.year %}{{ p.year }} — {% endif %}Solved Answers</span>
           <a class="btn btn-sm btn-outline" href="{{ p.link }}" target="_blank" rel="noopener">View</a>
         </div>
         {% endfor %}
       </div>
     </div>
+    {% endfor %}
     {% endfor %}
   </div>
 </section>
