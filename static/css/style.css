@@ -465,3 +465,30 @@ td.lunch{background:var(--warn-bg);color:var(--warn);font-weight:600;text-align:
 .man-name small{color:var(--sub);font-size:.78rem}
 .man-preview{font-size:.8rem;color:var(--sky);font-weight:600}
 .manage-form{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;display:flex;flex-direction:column;gap:12px}
+
+/* ── study‑materials folder navigation ─────────────────────────────────────── */
+.crumb{font-size:.82rem;color:var(--sub);margin-bottom:18px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.crumb a{color:var(--sky);text-decoration:none;font-weight:600}
+.crumb a:hover{color:var(--ink);text-decoration:underline}
+.crumb-sep{color:var(--sub);font-weight:400}
+
+.sem-grid,.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+
+.sem-folder,.subject-folder{display:flex;flex-direction:column;align-items:center;padding:22px 14px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.sem-folder:hover,.subject-folder:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,.25)}
+.empty-folder{opacity:.45;cursor:default;pointer-events:none}
+
+.sem-folder-icon{font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:700;color:var(--amber);background:var(--navy);border-radius:10px;padding:12px 18px;margin-bottom:8px;letter-spacing:1px}
+.sem-folder-label{font-size:.78rem;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.sem-folder-counts{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+
+.sf-name{font-size:.92rem;font-weight:700;color:var(--ink);margin-bottom:6px;line-height:1.35;flex:1}
+.sf-counts{display:flex;flex-wrap:wrap;gap:5px}
+
+.fc{font-size:.68rem;font-weight:600;border-radius:6px;padding:2px 7px;display:inline-block}
+.fc-notes{background:rgba(59,130,246,.12);color:#60a5fa}
+.fc-text{background:rgba(245,158,11,.12);color:#f59e0b}
+.fc-papers{background:rgba(16,185,129,.12);color:#34d399}
+
+.mat-section{margin:28px 0}
+.mat-section-head{font-size:.92rem;font-weight:700;color:var(--navy);padding:6px 0 10px;border-bottom:2px solid var(--line);margin-bottom:8px}

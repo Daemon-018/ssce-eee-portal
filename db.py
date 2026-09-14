@@ -87,7 +87,8 @@ CREATE TABLE IF NOT EXISTS study_materials (
     link TEXT DEFAULT '',
     uploaded_by TEXT DEFAULT 'EEE Dept',
     posted_on TEXT DEFAULT (date('now','localtime')),
-    year_sem TEXT NOT NULL DEFAULT '3-1'
+    year_sem TEXT NOT NULL DEFAULT '3-1',
+    category TEXT NOT NULL DEFAULT 'notes'  -- notes | textbook | reference
 );
 
 CREATE TABLE IF NOT EXISTS pyq (
@@ -279,6 +280,16 @@ def init_db():
         if "year_sem" not in cols:
             conn.execute(f"ALTER TABLE {tbl} ADD COLUMN year_sem TEXT NOT NULL DEFAULT '3-1'")
             print(f"[db] migrated: added {tbl}.year_sem")
+    # migration: study_materials category (notes | textbook | reference)
+    sm_cols = {r["name"] for r in conn.execute("PRAGMA table_info(study_materials)").fetchall()}
+    if "category" not in sm_cols:
+        conn.execute("ALTER TABLE study_materials ADD COLUMN category TEXT NOT NULL DEFAULT 'notes'")
+        print("[db] migrated: added study_materials.category")
+        # classify existing rows by title pattern
+        conn.execute("UPDATE study_materials SET category='textbook' WHERE LOWER(title) LIKE '%text book%' OR LOWER(title) LIKE '%data book%'")
+        conn.execute("UPDATE study_materials SET category='reference' WHERE kind IN ('ppt','video') OR LOWER(title) LIKE '%reference%' OR LOWER(title) LIKE '%comparison%'")
+        # everything else stays 'notes' (default)
+        print("[db] migrated: classified study_materials rows")
     conn.commit()
     conn.close()
 

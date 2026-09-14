@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ subject }} ({{ sem }}){% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="crumb">
+      <a href="{{ url_for('study_materials') }}">Study Materials</a>
+      <span class="crumb-sep">›</span>
+      <a href="{{ url_for('study_subjects', sem=sem) }}">{{ sem }}</a>
+      <span class="crumb-sep">›</span>
+      <span>{{ subject }}</span>
+    </div>
+
+    <div class="page-head">
+      <h1>{{ subject }}</h1>
+      <p class="muted">{{ sem }} Semester — {{ subject }}</p>
+    </div>
+
+    {% if notes %}
+    <div class="mat-section">
+      <h2 class="mat-section-head">Notes</h2>
+      <div class="mat-list">
+        {% for n in notes %}
+        <div class="mat-row">
+          <span class="kind-badge kind-{{ n.kind }}">{{ n.title }}</span>
+          {% if n.link and n.link != '#' %}
+          <a class="btn btn-sm btn-outline" href="{{ n.link }}" target="_blank" rel="noopener">Download</a>
+          {% elif n.link == '#' %}
+          <span class="btn btn-sm btn-ghost disabled">Soon</span>
+          {% else %}
+          <span class="muted small">In-class handout</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if textbooks %}
+    <div class="mat-section">
+      <h2 class="mat-section-head">Text Books</h2>
+      <div class="mat-list">
+        {% for tb in textbooks %}
+        <div class="mat-row">
+          <span class="mat-title">{{ tb.title }}</span>
+          {% if tb.link and tb.link != '#' %}
+          <a class="btn btn-sm btn-outline" href="{{ tb.link }}" target="_blank" rel="noopener">Download</a>
+          {% elif tb.link == '#' %}
+          <span class="btn btn-sm btn-ghost disabled">Soon</span>
+          {% else %}
+          <span class="muted small">Available in library</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if papers %}
+    <div class="mat-section">
+      <h2 class="mat-section-head">Previous Question Papers</h2>
+      <div class="mat-list">
+        {% for p in papers %}
+        <div class="mat-row">
+          <span class="exam-badge exam-{{ 'supply' if p.exam == 'Supply' else 'regular' }}">{{ p.exam }}</span>
+          <span class="mat-title">{% if p.year %}{{ p.year }} — {% endif %}Question Paper</span>
+          {% if p.download and p.download != '#' %}
+          <a class="btn btn-sm btn-outline" href="{{ p.download }}" target="_blank" rel="noopener">Download</a>
+          {% elif p.download == '#' %}
+          <span class="btn btn-sm btn-ghost disabled">Soon</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if others %}
+    <div class="mat-section">
+      <h2 class="mat-section-head">More Materials</h2>
+      <div class="mat-list">
+        {% for o in others %}
+        <div class="mat-row">
+          <span class="kind-badge kind-{{ o.kind }}">{{ o.title }}</span>
+          {% if o.link and o.link != '#' %}
+          <a class="btn btn-sm btn-outline" href="{{ o.link }}" target="_blank" rel="noopener">Open</a>
+          {% elif o.link == '#' %}
+          <span class="btn btn-sm btn-ghost disabled">Soon</span>
+          {% else %}
+          <span class="muted small">In-class handout</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not notes and not textbooks and not papers and not others %}
+    <div class="card empty-card"><p>No materials uploaded yet for this subject.</p></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

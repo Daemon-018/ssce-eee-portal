@@ -5,37 +5,30 @@
   <div class="container">
     <div class="page-head">
       <h1>Study Materials</h1>
-      <p class="muted">Easy notes, PDFs, PPTs and video lectures — subject-wise, semester-wise.</p>
+      <p class="muted">Browse by semester — notes, text books &amp; previous question papers.</p>
     </div>
 
-    {% if not by_sem %}
-      <div class="card empty-card"><p>No study materials uploaded yet.</p></div>
-    {% endif %}
-
-    {% for sem, by_subject in by_sem.items() %}
-    <h2 class="sem-sec">{{ sem }} Semester</h2>
-    {% for subject, items in by_subject.items() %}
-    <div class="card mat-card">
-      <h3>{{ subject }}</h3>
-      <div class="mat-list">
-        {% for it in items %}
-        <div class="mat-row">
-          <span class="kind-badge kind-{{ it.kind }}">{{ it.kind|upper }}</span>
-          <span class="mat-title">{{ it.title }}</span>
-          {% if it.link and it.link != '#' %}
-          <a class="btn btn-sm btn-outline" href="{{ it.link }}" target="_blank" rel="noopener">Open</a>
-          {% elif it.link == '#' %}
-          <span class="btn btn-sm btn-ghost disabled">Soon</span>
-          {% else %}
-          <span class="muted small">In-class handout</span>
-          {% endif %}
+    <div class="sem-grid">
+      {% for sem in sems %}
+      {% if sem.has_data %}
+      <a class="card sem-folder has-data" href="{{ url_for('study_subjects', sem=sem.name) }}">
+        <div class="sem-folder-icon">{{ sem.name }}</div>
+        <div class="sem-folder-label">Semester</div>
+        <div class="sem-folder-counts">
+          {% if sem.notes %}<span class="fc fc-notes">{{ sem.notes }} notes</span>{% endif %}
+          {% if sem.textbooks %}<span class="fc fc-text">{{ sem.textbooks }} textbooks</span>{% endif %}
+          {% if sem.papers %}<span class="fc fc-papers">{{ sem.papers }} papers</span>{% endif %}
         </div>
-        {% endfor %}
+      </a>
+      {% else %}
+      <div class="card sem-folder empty-folder">
+        <div class="sem-folder-icon">{{ sem.name }}</div>
+        <div class="sem-folder-label">Semester</div>
+        <p class="muted small">Coming soon</p>
       </div>
-      <p class="muted small">Uploaded by {{ items[0].uploaded_by }}</p>
+      {% endif %}
+      {% endfor %}
     </div>
-    {% endfor %}
-    {% endfor %}
   </div>
 </section>
 {% endblock %}

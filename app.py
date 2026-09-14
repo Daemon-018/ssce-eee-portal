@@ -639,15 +639,101 @@ def _group_by_sem(rows):
     return {sem: by_sem[sem] for sem in sorted(by_sem, key=_sem_key)}
 
 
+# ── study‑materials folder navigation ──────────────────────────────────────────
+
+_SEM_ORDER = ["1-1","1-2","2-1","2-2","3-1","3-2","4-1","4-2"]
+
 @app.route("/study-materials")
 @login_required()
 def study_materials():
     db = get_db_conn()
-    rows = db.execute(
-        "SELECT * FROM study_materials ORDER BY year_sem, subject, posted_on DESC, id DESC"
+    counts = {}
+    for r in db.execute("""SELECT year_sem, category, COUNT(*) c
+                           FROM study_materials GROUP BY year_sem, category"""):
+        counts.setdefault(r["year_sem"], {"notes":0,"textbook":0,"reference":0})
+        counts[r["year_sem"]][r["category"]] = r["c"]
+    pyq_counts = {}
+    for r in db.execute("SELECT year_sem, COUNT(*) c FROM pyq GROUP BY year_sem"):
+        pyq_counts[r["year_sem"]] = r["c"]
+    sems = []
+    for s in _SEM_ORDER:
+        sems.append({
+            "name": s,
+            "notes": counts.get(s,{}).get("notes",0),
+            "textbooks": counts.get(s,{}).get("textbook",0),
+            "papers": pyq_counts.get(s,0),
+            "has_data": s in counts or s in pyq_counts,
+        })
+    return render_template("study_materials.html", sems=sems)
+
+
+@app.route("/study-materials/<sem>")
+@login_required()
+def study_subjects(sem):
+    if sem not in _SEM_ORDER:
+        abort(404)
+    db = get_db_conn()
+    subjects = db.execute(
+        """SELECT subject,
+                  SUM(CASE WHEN category='notes' THEN 1 ELSE 0 END) as notes,
+                  SUM(CASE WHEN category='textbook' THEN 1 ELSE 0 END) as textbooks
+           FROM study_materials WHERE year_sem=? GROUP BY subject ORDER BY subject""",
+        (sem,)
     ).fetchall()
-    by_sem = _group_by_sem(rows)
-    return render_template("study_materials.html", by_sem=by_sem)
+    pyq_counts = {}
+    for r in db.execute("SELECT subject, COUNT(*) c FROM pyq WHERE year_sem=? GROUP BY subject", (sem,)):
+        pyq_counts[r["subject"]] = r["c"]
+    seen = set()
+    subs = []
+    for s in subjects:
+        seen.add(s["subject"])
+        subs.append({
+            "name": s["subject"],
+            "notes": s["notes"],
+            "textbooks": s["textbooks"],
+            "papers": pyq_counts.get(s["subject"], 0),
+        })
+    for subj, cnt in sorted(pyq_counts.items()):
+        if subj in seen:
+            continue
+        subs.append({"name": subj, "notes": 0, "textbooks": 0, "papers": cnt})
+    return render_template("study_subjects.html", sem=sem, subjects=subs)
+
+
+@app.route("/study-materials/<sem>/<subject>")
+@login_required()
+def study_subject(sem, subject):
+    if sem not in _SEM_ORDER:
+        abort(404)
+    db = get_db_conn()
+    items = db.execute(
+        "SELECT * FROM study_materials WHERE year_sem=? AND subject=? ORDER BY category, title",
+        (sem, subject)
+    ).fetchall()
+    papers = db.execute(
+        "SELECT * FROM pyq WHERE year_sem=? AND subject=? ORDER BY year DESC, exam",
+        (sem, subject)
+    ).fetchall()
+    if not items and not papers:
+        abort(404)
+
+    def _unit_order(t):
+        title = t.lower().strip()
+        import re
+        m = re.search(r'unit\s+([ivx]+|\d+)', title)
+        if not m:
+            return 99
+        tok = m.group(1)
+        if tok.isdigit():
+            return int(tok)
+        rom = {'i':1,'ii':2,'iii':3,'iv':4,'v':5,'vi':6,'vii':7,'viii':8,'ix':9,'x':10}
+        return rom.get(tok, 99)
+
+    notes = sorted([i for i in items if i["category"] == "notes"], key=lambda i: _unit_order(i["title"]))
+    textbooks = [i for i in items if i["category"] == "textbook"]
+    others = [i for i in items if i["category"] not in ("notes","textbook")]
+    return render_template("study_subject.html", sem=sem, subject=subject,
+                           notes=notes, textbooks=textbooks, others=others, papers=papers)
 
 
 @app.route("/pyq")

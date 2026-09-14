@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ sem }} Subjects — Study Materials{% endblock %}
+{% block content %}
+<section class="dash-section">
+  <div class="container">
+    <div class="crumb">
+      <a href="{{ url_for('study_materials') }}">Study Materials</a>
+      <span class="crumb-sep">›</span>
+      <span>{{ sem }} Semester</span>
+    </div>
+    <div class="page-head">
+      <h1>{{ sem }} Semester — Subjects</h1>
+    </div>
+
+    {% if not subjects %}
+    <div class="card empty-card"><p>No materials uploaded yet for this semester.</p></div>
+    {% endif %}
+
+    <div class="subject-grid">
+      {% for s in subjects %}
+      <a class="card subject-folder" href="{{ url_for('study_subject', sem=sem, subject=s.name) }}">
+        <div class="sf-name">{{ s.name }}</div>
+        <div class="sf-counts">
+          {% if s.notes %}<span class="fc fc-notes">{{ s.notes }} notes</span>{% endif %}
+          {% if s.textbooks %}<span class="fc fc-text">{{ s.textbooks }} textbook{{ 's' if s.textbooks > 1 }}</span>{% endif %}
+          {% if s.papers %}<span class="fc fc-papers">{{ s.papers }} paper{{ 's' if s.papers > 1 }}</span>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
