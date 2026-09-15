@@ -11,6 +11,8 @@ EXAM_MAP = {
     "1-2 REG (1) .xlsx": ("1-2", 1, "MAY 2025"),
     "1-2 SUPPLY [2] .xlsx": ("1-2", 2, "NOV 2025"),
     "1-2 SUPPLY [3] .xlsx": ("1-2", 3, "JUN 2026"),
+    "2-1  REGULAR .xlsx": ("2-1", 1, "DEC 2025"),
+    "2-1 SUPPLY .xlsx": ("2-1", 2, "JUN 2026"),
     "2-2 REG .xlsx": ("2-2", 1, "MAY 2026"),
 }
 
@@ -104,7 +106,7 @@ if __name__ == "__main__":
 
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    for sem, cyc in (("1-2", 1), ("1-2", 2), ("1-2", 3), ("2-2", 1)):
+    for sem, cyc in (("1-2", 1), ("1-2", 2), ("1-2", 3), ("2-1", 1), ("2-1", 2), ("2-2", 1)):
         n = conn.execute("SELECT COUNT(*) c FROM sem_results WHERE year_sem=? AND exam_cycle=?",
                          (sem, cyc)).fetchone()["c"]
         print(f"sem_results total {sem} cycle {cyc}: {n}")
